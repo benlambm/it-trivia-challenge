@@ -1,0 +1,89 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          SSH_HOST_KEY:    ${{ secrets.DEPLOY_HOST_KEY }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_HOST_KEY"    > ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy
+        env:
+          SSH_HOST: ${{ secrets.DEPLOY_HOST }}
+          GIT_SHA:  ${{ github.sha }}
+        run: |
+          ssh -o BatchMode=yes "root@${SSH_HOST}" bash -s "$GIT_SHA" <<'REMOTE'
+          set -euo pipefail
+          GIT_SHA="$1"
+          REPO=/opt/trivia-app
+          WEB_ROOT=/var/www/trivia.benlamb.net
+
+          echo "==> Deploying ${GIT_SHA} at $(date -u +%FT%TZ)"
+          cd "$REPO"
+          PREV_SHA="$(git rev-parse HEAD)"
+          git fetch --prune origin
+          git reset --hard "$GIT_SHA"
+
+          # ---- Frontend: build, verify, rotate ----
+          echo "==> Building web/"
+          cd "$REPO/web"
+          npm ci
+          npm run build
+
+          echo "==> Verifying client bundle is clean of SDK + API key"
+          if grep -lq '@google/genai' dist/assets/*.js 2>/dev/null; then
+            echo "FAIL: @google/genai found in client bundle" >&2; exit 1
+          fi
+          if grep -lE 'AIza[0-9A-Za-z_-]{35}' dist/assets/*.js 2>/dev/null; then
+            echo "FAIL: Google API key pattern found in client bundle" >&2; exit 1
+          fi
+
+          echo "==> Rotating into nginx web root"
+          cd "$WEB_ROOT"
+          rm -rf assets.prev
+          [ -d assets ] && mv assets assets.prev
+          cp -r "$REPO/web/dist/assets" ./
+          [ -f index.html ] && mv index.html index.html.prev
+          cp "$REPO/web/dist/index.html" ./
+
+          # ---- Backend: rebuild + restart only when api/ actually changed ----
+          cd "$REPO"
+          if git diff --quiet "$PREV_SHA" "$GIT_SHA" -- api/; then
+            echo "==> No api/ changes; skipping backend redeploy"
+          else
+            echo "==> Reinstalling api/ deps and restarting trivia-api"
+            cd "$REPO/api"
+            npm ci --omit=dev
+            systemctl restart trivia-api
+            ok=0
+            for i in 1 2 3 4 5 6 7 8; do
+              sleep 1
+              if curl -fsS http://127.0.0.1:3000/api/health > /dev/null 2>&1; then ok=1; break; fi
+            done
+            if [ "$ok" -ne 1 ]; then
+              echo "FAIL: trivia-api did not become healthy after restart" >&2
+              journalctl -u trivia-api -n 40 --no-pager >&2
+              exit 1
+            fi
+          fi
+
+          # ---- Final smoke through nginx ----
+          curl -fsS  https://trivia.benlamb.net/api/health > /dev/null
+          curl -fsSI https://trivia.benlamb.net/ | head -1
+          echo "==> Done"
+          REMOTE

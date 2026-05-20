@@ -6,6 +6,10 @@ assets/
 dist/
 build/
 
+# Top-level index.html is a built artifact (deployed to /var/www/...).
+# The source template is web/index.html — that one stays tracked.
+/index.html
+
 # Environment / secrets
 .env
 .env.*

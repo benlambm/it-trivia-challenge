@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+
+# Vite / frontend build output
+assets/
+dist/
+build/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime / cache
+.cache/
+.tmp/
+tmp/
+.vite/
+
+# TypeScript / tooling cache
+*.tsbuildinfo
+
+# Test / coverage output
+coverage/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Archives / backups
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.bak
+*.backup

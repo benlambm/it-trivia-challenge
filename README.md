@@ -176,4 +176,8 @@ Ideas if you're looking for something to do:
 
 ## License
 
-This is a class-and-portfolio project. No formal license yet — if you want to use a chunk of code in your own project, open an issue and we'll sort it out.
+Released under the [PolyForm Noncommercial License 1.0.0](./LICENSE) — copy it, study it, modify it, redistribute it, build personal or educational projects on top of it. The one thing you can't do is use it commercially. Personal use, hobby projects, schoolwork, research, and non-profit / educational organizations are all explicitly permitted by the license text; for-profit use is not.
+
+Heads up on terminology: a "no commercial use" clause technically makes this *source-available* software rather than OSI-approved "open source" (the OSI definition forbids use restrictions). PolyForm Noncommercial was specifically drafted by software-license lawyers for this exact case — preferred over Creative Commons NC, which Creative Commons themselves recommend against using for code.
+
+If you have a commercial use in mind, [open an issue](https://github.com/benlambm/it-trivia-challenge/issues) — happy to talk.

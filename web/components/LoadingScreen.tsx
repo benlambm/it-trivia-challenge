@@ -5,31 +5,32 @@ interface LoadingScreenProps {
   type: 'questions' | 'results';
 }
 
+const QUESTION_STEPS = [
+  `Connecting to Neural Network...`,
+  `Scanning ${Category.NETWORKING} protocols...`,
+  `Training ${Category.AI} models...`,
+  `Compiling ${Category.DEV} code...`,
+  `Securing ${Category.CYBER} endpoints...`,
+  `Analyzing ${Category.OPS} scenarios...`,
+  `Finalizing Game Data...`,
+];
+
+const RESULT_STEPS = [
+  'Calculating Score...',
+  'Analyzing Performance...',
+  'Drafting Career Path...',
+  'Contacting Brightpoint CC...',
+  'Generating Certificate...',
+];
+
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ type }) => {
   const [progress, setProgress] = useState(0);
   const [loadingText, setLoadingText] = useState('');
 
-  const questionSteps = [
-    `Connecting to Neural Network...`,
-    `Scanning ${Category.NETWORKING} protocols...`,
-    `Training ${Category.AI} models...`,
-    `Compiling ${Category.DEV} code...`,
-    `Securing ${Category.CYBER} endpoints...`,
-    `Analyzing ${Category.OPS} scenarios...`,
-    `Finalizing Game Data...`
-  ];
-
-  const resultSteps = [
-    "Calculating Score...",
-    "Analyzing Performance...",
-    "Drafting Career Path...",
-    "Contacting Brightpoint CC...",
-    "Generating Certificate..."
-  ];
-
-  const steps = type === 'questions' ? questionSteps : resultSteps;
-
   useEffect(() => {
+    const steps = type === 'questions' ? QUESTION_STEPS : RESULT_STEPS;
+    setProgress(0);
+    setLoadingText('');
     let currentStep = 0;
     const interval = setInterval(() => {
       if (currentStep < steps.length) {
@@ -40,7 +41,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ type }) => {
     }, 800);
 
     return () => clearInterval(interval);
-  }, [steps]);
+  }, [type]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 px-4">

@@ -20,8 +20,9 @@ const ABOUT_LINKS: FooterLink[] = [
   { label: 'Source on GitHub', href: 'https://github.com/benlambm/it-trivia-challenge', external: true },
   { label: 'License (PolyForm NC 1.0.0)', href: 'https://github.com/benlambm/it-trivia-challenge/blob/main/LICENSE', external: true },
   { label: 'Powered by Google Gemini', href: 'https://ai.google.dev/', external: true },
+  { label: 'GenKit 2.0 AI Flows in TypeScript', href: 'https://genkit.dev/', external: true },
   { label: 'Report an Issue', href: 'https://github.com/benlambm/it-trivia-challenge/issues', external: true },
-  { label: 'Built with React + Vite', href: '#', placeholder: true },
+  { label: 'Built with React + Vite', href: 'https://vitejs.dev/', external: true },
 ];
 
 const ExternalArrow: React.FC = () => (

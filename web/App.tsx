@@ -7,6 +7,7 @@ import LoadingScreen from './components/LoadingScreen';
 import QuizScreen from './components/QuizScreen';
 import ResultsScreen from './components/ResultsScreen';
 import ErrorToast from './components/ErrorToast';
+import Footer from './components/Footer';
 
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(GameState.WELCOME);
@@ -92,6 +93,10 @@ const App: React.FC = () => {
           result={gameResult} 
           onPlayAgain={() => setGameState(GameState.WELCOME)} 
         />
+      )}
+
+      {(gameState === GameState.WELCOME || gameState === GameState.RESULTS) && (
+        <Footer />
       )}
     </div>
   );

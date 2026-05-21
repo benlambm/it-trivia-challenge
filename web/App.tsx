@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { createRoot } from 'react-dom/client';
 import { GameState, Question, GameResult } from './types';
 import { generateQuestions, generateGameResults } from './services/geminiService';
 import WelcomeScreen from './components/WelcomeScreen';

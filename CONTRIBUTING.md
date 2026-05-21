@@ -36,7 +36,9 @@ npm ci
 npm run dev                   # http://localhost:5173 (proxies /api to the backend)
 ```
 
-You'll want the Vite proxy bit from the README to make `fetch('/api/...')` work in dev. After that, edit code and Vite reloads instantly. The backend restart is manual — `Ctrl-C` and `node index.js` again — unless you wire up `node --watch`.
+The Vite dev server proxies `/api` to the backend (see `web/vite.config.ts`). After that, edit code and Vite reloads instantly. The backend restart is manual — `Ctrl-C` and `node index.js` again — unless you wire up `node --watch`.
+
+**Node version:** Vite 8 requires Node `^20.19.0 || >=22.12.0`. Run `npm test` and `npm run verify:bundle` in `web/` before opening a PR.
 
 ---
 
@@ -45,9 +47,9 @@ You'll want the Vite proxy bit from the README to make `fetch('/api/...')` work 
 1. **Fork the repo** (or create a branch if you have push access).
 2. **Branch from `main`**: `git checkout -b your-thing`. Branch names like `feature/share-card`, `fix/loading-flash`, or `prompt/better-cyber-questions` are fine — be descriptive.
 3. **Make your change.** Small, focused changes get merged faster than sprawling ones. If you're tempted to do two unrelated things, that's two PRs.
-4. **Test it manually**: run the app locally, play through a full game (Welcome → Loading → Quiz → Results), confirm nothing you didn't intend to change is broken. If you touched `api/index.js`, hit `curl -fsS http://127.0.0.1:3000/api/health` and confirm questions/results still return valid JSON.
+4. **Run automated checks** in `web/`: `npm test` and `npm run verify:bundle`. **Test manually**: play through a full game (Welcome → Loading → Quiz → Results). If you touched `api/index.js`, hit `curl -fsS http://127.0.0.1:3000/api/health` and confirm questions/results still return valid JSON.
 5. **Push and open a PR** against `main`. Describe what you did and why. Screenshots/GIFs help a lot for UI changes.
-6. **CI runs automatically** on the PR. It doesn't auto-deploy from PRs — only `main` does — but it tells us if your branch breaks the build.
+6. **CI runs automatically** on the PR ([`ci.yml`](./.github/workflows/ci.yml): unit tests + production build + bundle security checks). It doesn't auto-deploy from PRs — only `main` does.
 
 After review and merge, the [deploy workflow](./.github/workflows/deploy.yml) ships your change to production within ~10 seconds. You'll see it live.
 

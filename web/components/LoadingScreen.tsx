@@ -38,7 +38,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ type }) => {
         setProgress(Math.min(((currentStep + 1) / steps.length) * 100, 95));
         currentStep++;
       }
-    }, 800);
+    }, 1600);
 
     return () => clearInterval(interval);
   }, [type]);

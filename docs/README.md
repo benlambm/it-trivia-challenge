@@ -1,4 +1,12 @@
-# Vite reference docs (for agents & humans)
+# Docs
+
+## Architecture
+
+| Doc | Description |
+|-----|-------------|
+| [architecture.md](./architecture.md) | System diagrams, monorepo layout, API contract, game flow, CI/deploy |
+
+## Vite reference (for agents & humans)
 
 Official Vite LLM-oriented documentation, saved locally for offline / in-repo context.
 

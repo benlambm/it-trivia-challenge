@@ -17,6 +17,8 @@ Browser ──HTTPS──▶ nginx (:443)
 | `web/` | React 19 + TypeScript + Vite 8. Calls `/api/*` only — **no API keys in the client**. |
 | `api/` | Express + Genkit + zod. **Only** place `GOOGLE_GENAI_API_KEY` lives (`api/.env`, gitignored). |
 
+Full diagrams and module map: **[docs/architecture.md](./docs/architecture.md)**.
+
 Structured output (`output: { schema }` in Genkit) forces JSON-shaped questions and results — see `api/index.js` for prompts and schemas.
 
 **Stack:** React 19, Vite 8, Tailwind (CDN), Node 24, Genkit, `gemini-flash-latest`. No DB, auth, or analytics.

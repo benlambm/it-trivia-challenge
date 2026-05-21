@@ -57,7 +57,6 @@ const triviaQuestionsFlow = ai.defineFlow(
     - Questions should be engaging but educational.
     - Provide 4 options per question.
     - Ensure the correct answer is accurate.
-    - CRITICAL: Randomize the position of the correct answer. It is VITAL that the correct answer is NOT always the 2nd or 3rd option (B or C). Ensure an even distribution of correct answers across indices 0, 1, 2, and 3 (A, B, C, D) throughout the 25 questions.
 
     Specific Category Instructions:
     - For "${CATEGORY_OPS}": Focus strictly on practical help desk scenarios, hardware/software troubleshooting, and problem-solving (e.g., "A user's screen is black," "Printer won't print"). Ask "What is the BEST first step?" or "What should you check first?". DO NOT include ITIL, ITSM, or complex framework questions. Keep it hands-on and high-school friendly.

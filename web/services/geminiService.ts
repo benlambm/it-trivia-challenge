@@ -1,5 +1,6 @@
 import { Question, GameResult } from '../types';
 import { shuffleArray } from '../lib/shuffleArray';
+import type { Difficulty } from '../lib/difficulty';
 
 async function postJson<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
@@ -35,8 +36,8 @@ interface ResultsResponse {
   motivation: string;
 }
 
-export const generateQuestions = async (): Promise<Question[]> => {
-  const { questions } = await postJson<QuestionsResponse>('/api/questions');
+export const generateQuestions = async (difficulty: Difficulty = 'normal'): Promise<Question[]> => {
+  const { questions } = await postJson<QuestionsResponse>('/api/questions', { difficulty });
   if (!Array.isArray(questions) || questions.length === 0) {
     throw new Error('Empty question set from API.');
   }

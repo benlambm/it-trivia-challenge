@@ -4,9 +4,10 @@ import { GameResult } from '../types';
 interface ResultsScreenProps {
   result: GameResult;
   onPlayAgain: () => void;
+  playAgainLabel: string;
 }
 
-const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, onPlayAgain }) => {
+const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, onPlayAgain, playAgainLabel }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Confetti effect
@@ -102,7 +103,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, onPlayAgain }) =>
               onClick={onPlayAgain}
               className="w-full py-6 bg-[#173A45] text-white rounded-2xl font-black text-2xl hover:bg-[#E87722] transition-colors border-4 border-[#173A45] hover:shadow-[4px_4px_0px_0px_#173A45]"
             >
-              Play Again
+              {playAgainLabel}
             </button>
           </div>
         </div>

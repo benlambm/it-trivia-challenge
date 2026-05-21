@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { generateGameResults } from './geminiService';
+import { generateGameResults, generateQuestions } from './geminiService';
 
 describe('generateGameResults', () => {
   afterEach(() => {
@@ -28,5 +28,52 @@ describe('generateGameResults', () => {
       motivation:
         "Brightpoint Community College offers amazing pathways into IT careers. Whether you got a perfect score or are just starting, there's a class for you!",
     });
+  });
+});
+
+describe('generateQuestions', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  function stubQuestionsFetch() {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        questions: Array.from({ length: 25 }, (_, i) => ({
+          category: 'Networking & Internet',
+          text: `Q${i}`,
+          options: ['a', 'b', 'c', 'd'],
+          correctAnswer: 'a',
+        })),
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  }
+
+  it('forwards the provided difficulty to /api/questions', async () => {
+    const fetchMock = stubQuestionsFetch();
+    await generateQuestions('harder');
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/questions',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ difficulty: 'harder' }),
+      }),
+    );
+  });
+
+  it("defaults to difficulty 'normal' when called with no argument", async () => {
+    const fetchMock = stubQuestionsFetch();
+    await generateQuestions();
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/questions',
+      expect.objectContaining({
+        body: JSON.stringify({ difficulty: 'normal' }),
+      }),
+    );
   });
 });

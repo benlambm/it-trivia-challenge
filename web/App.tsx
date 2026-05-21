@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { GameState, Question, GameResult } from './types';
 import { generateQuestions, generateGameResults } from './services/geminiService';
+import { Difficulty, TIER_TO_DIFFICULTY, nextTier, playAgainLabel } from './lib/difficulty';
 import WelcomeScreen from './components/WelcomeScreen';
 import LoadingScreen from './components/LoadingScreen';
 import QuizScreen from './components/QuizScreen';
@@ -13,12 +14,14 @@ const App: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [difficultyTier, setDifficultyTier] = useState(0);
+  const [pendingLabel, setPendingLabel] = useState('Play Again');
 
-  const startNewGame = useCallback(async () => {
+  const startNewGame = useCallback(async (difficulty: Difficulty) => {
     setError(null);
     setGameState(GameState.LOADING_QUESTIONS);
     try {
-      const newQuestions = await generateQuestions();
+      const newQuestions = await generateQuestions(difficulty);
       if (!newQuestions || newQuestions.length === 0) {
         throw new Error("Received empty question set from API.");
       }
@@ -38,6 +41,9 @@ const App: React.FC = () => {
   }, []);
 
   const handleGameFinish = useCallback(async (finalScore: number) => {
+    const { tier, delta } = nextTier(difficultyTier, finalScore);
+    setDifficultyTier(tier);
+    setPendingLabel(playAgainLabel(delta));
     setGameState(GameState.LOADING_RESULTS);
     try {
       const result = await generateGameResults(finalScore, questions.length);
@@ -57,7 +63,7 @@ const App: React.FC = () => {
       });
       setGameState(GameState.RESULTS);
     }
-  }, [questions.length]);
+  }, [questions.length, difficultyTier]);
 
   return (
     <div className="font-sans antialiased text-slate-900 relative">
@@ -69,7 +75,7 @@ const App: React.FC = () => {
       )}
 
       {gameState === GameState.WELCOME && (
-        <WelcomeScreen onStart={startNewGame} />
+        <WelcomeScreen onStart={() => startNewGame(TIER_TO_DIFFICULTY[difficultyTier])} />
       )}
 
       {gameState === GameState.LOADING_QUESTIONS && (
@@ -88,9 +94,10 @@ const App: React.FC = () => {
       )}
 
       {gameState === GameState.RESULTS && gameResult && (
-        <ResultsScreen 
-          result={gameResult} 
-          onPlayAgain={() => setGameState(GameState.WELCOME)} 
+        <ResultsScreen
+          result={gameResult}
+          onPlayAgain={() => startNewGame(TIER_TO_DIFFICULTY[difficultyTier])}
+          playAgainLabel={pendingLabel}
         />
       )}
 

@@ -34,15 +34,27 @@ const CATEGORY_DEV = 'Program and Database Development';
 const CATEGORY_CYBER = 'Cybersecurity';
 const CATEGORY_OPS = 'IT Operations and Support';
 
+const DIFFICULTY_LEVELS = ['much_easier', 'easier', 'normal', 'harder', 'much_harder'];
+const DIFFICULTY_DESCRIPTORS = {
+  much_easier: 'elementary to middle-school level: very basic, intuitive concepts about everyday technology (e.g., "What does Wi-Fi let devices do?", "What is a password used for?"). Use simple wording and obvious distractors.',
+  easier: 'early high-school level: common-knowledge IT concepts with simple wording. Distractors should be plausible but clearly distinguishable to anyone who has used a computer.',
+  normal: 'high-school level: solid foundational IT concepts a curious high-school student should be able to reason through. Balanced distractors.',
+  harder: 'advanced high-school / introductory college level: more specific terminology, subtler distractors, deeper conceptual nuance. Distinctions between similar concepts (e.g., TCP vs. UDP, symmetric vs. asymmetric encryption).',
+  much_harder: 'introductory college level: precise technical terminology, specific protocols, standards, and common gotchas. Distractors should require real understanding to eliminate.',
+};
+
 const triviaQuestionsFlow = ai.defineFlow(
   {
     name: 'triviaQuestionsFlow',
-    inputSchema: z.object({}).optional(),
+    inputSchema: z.object({
+      difficulty: z.enum(DIFFICULTY_LEVELS).default('normal'),
+    }),
     outputSchema: QuestionsOutputSchema,
   },
-  async () => {
+  async ({ difficulty }) => {
+    const descriptor = DIFFICULTY_DESCRIPTORS[difficulty] ?? DIFFICULTY_DESCRIPTORS.normal;
     const prompt = `
-    Create a high-school level IT Trivia game.
+    Create an IT Trivia game at this difficulty: ${descriptor}
     Generate exactly 25 multiple choice questions.
 
     The questions must be divided evenly (5 questions per category) across these 5 categories, in this specific order:
@@ -126,9 +138,9 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.post('/api/questions', async (_req, res, next) => {
+app.post('/api/questions', async (req, res, next) => {
   try {
-    const output = await triviaQuestionsFlow({});
+    const output = await triviaQuestionsFlow(req.body ?? {});
     res.json(output);
   } catch (err) {
     next(err);

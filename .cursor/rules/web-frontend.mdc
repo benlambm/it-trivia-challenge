@@ -1,0 +1,16 @@
+---
+description: Vite 8 frontend conventions, dev server, and tests
+globs: web/**/*
+alwaysApply: false
+---
+
+# Web frontend (`web/`)
+
+- **Node:** `^20.19.0 || >=22.12.0` (Vite 8).
+- **Dev:** `npm run dev` → `http://localhost:5173`; `/api` proxied to `:3000` (`vite.config.ts`). API must be running separately.
+- **Tests:** `npm test` (Vitest). Before PR: `npm run verify:bundle`.
+- **Build:** Edit `web/index.html` + `npm run build` — deployed `index.html` is generated output.
+- **Bundling:** React is bundled; Tailwind loads from CDN (`cdn.tailwindcss.com`). Do not add Gemini SDK or API keys to the client.
+- **Vite docs:** `docs/vite-llms-full.txt` (full), `docs/vite-llms.txt` (TOC).
+
+Game state machine: `App.tsx`. API client: `services/geminiService.ts` (historical name — calls `/api/*` only).

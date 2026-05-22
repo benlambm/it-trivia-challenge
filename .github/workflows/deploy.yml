@@ -29,10 +29,12 @@ jobs:
         env:
           SSH_HOST: ${{ secrets.DEPLOY_HOST }}
           GIT_SHA:  ${{ github.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
         run: |
-          ssh -o BatchMode=yes "root@${SSH_HOST}" bash -s "$GIT_SHA" <<'REMOTE'
+          ssh -o BatchMode=yes "root@${SSH_HOST}" bash -s "$GIT_SHA" "$BEFORE_SHA" <<'REMOTE'
           set -euo pipefail
           GIT_SHA="$1"
+          BEFORE_SHA="${2:-}"
           REPO=/opt/trivia-app
           WEB_ROOT=/var/www/trivia.benlamb.net
 
@@ -66,7 +68,11 @@ jobs:
 
           # ---- Backend: rebuild + restart only when api/ actually changed ----
           cd "$REPO"
-          if git diff --quiet "$PREV_SHA" "$GIT_SHA" -- api/; then
+          DIFF_BASE="$PREV_SHA"
+          if [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ] && git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
+            DIFF_BASE="$BEFORE_SHA"
+          fi
+          if git diff --quiet "$DIFF_BASE" "$GIT_SHA" -- api/; then
             echo "==> No api/ changes; skipping backend redeploy"
           else
             echo "==> Reinstalling api/ deps and restarting trivia-api"

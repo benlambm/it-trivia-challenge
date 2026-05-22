@@ -7,7 +7,7 @@
 
 **Live:** [trivia.benlamb.net](https://trivia.benlamb.net)
 
-There is no question bank! Generative AI crafts new questions on the spot when you click Start New Game. Complete the IT trivia quiz to receive personalized AI feedback and coaching!
+There is no question bank! Generative AI crafts new questions on the spot when you click Start New Game, adjusts the difficulty level, and adapts to your knowledge for endless play. Complete the IT trivia quiz to receive personalized AI feedback and coaching!
 
 **Full Stack:** JavaScript (React 19, Vite 8), HTML/CSS, with Express and Genkit on the backside to request structured outputs from Gemini AI (gemini-flash-latest)
 

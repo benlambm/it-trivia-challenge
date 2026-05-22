@@ -36,7 +36,7 @@ interface ResultsResponse {
   motivation: string;
 }
 
-export const generateQuestions = async (difficulty: Difficulty = 'normal'): Promise<Question[]> => {
+export const fetchQuestions = async (difficulty: Difficulty = 'normal'): Promise<Question[]> => {
   const { questions } = await postJson<QuestionsResponse>('/api/questions', { difficulty });
   if (!Array.isArray(questions) || questions.length === 0) {
     throw new Error('Empty question set from API.');
@@ -50,7 +50,7 @@ export const generateQuestions = async (difficulty: Difficulty = 'normal'): Prom
   }));
 };
 
-export const generateGameResults = async (score: number, total: number): Promise<GameResult> => {
+export const fetchGameResults = async (score: number, total: number): Promise<GameResult> => {
   try {
     const r = await postJson<ResultsResponse>('/api/results', { score, total });
     return {

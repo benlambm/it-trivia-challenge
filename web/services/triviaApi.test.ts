@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { generateGameResults, generateQuestions } from './geminiService';
+import { fetchGameResults, fetchQuestions } from './triviaApi';
 
-describe('generateGameResults', () => {
+describe('fetchGameResults', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
@@ -18,7 +18,7 @@ describe('generateGameResults', () => {
       }),
     );
 
-    const result = await generateGameResults(7, 25);
+    const result = await fetchGameResults(7, 25);
 
     expect(result).toEqual({
       score: 7,
@@ -31,7 +31,7 @@ describe('generateGameResults', () => {
   });
 });
 
-describe('generateQuestions', () => {
+describe('fetchQuestions', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
@@ -56,7 +56,7 @@ describe('generateQuestions', () => {
 
   it('forwards the provided difficulty to /api/questions', async () => {
     const fetchMock = stubQuestionsFetch();
-    await generateQuestions('harder');
+    await fetchQuestions('harder');
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/questions',
       expect.objectContaining({
@@ -68,7 +68,7 @@ describe('generateQuestions', () => {
 
   it("defaults to difficulty 'normal' when called with no argument", async () => {
     const fetchMock = stubQuestionsFetch();
-    await generateQuestions();
+    await fetchQuestions();
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/questions',
       expect.objectContaining({

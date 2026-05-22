@@ -55,19 +55,19 @@ Run the API and frontend in two terminals (`api/` then `web/`). Vite proxies `/a
 ```mermaid
 flowchart LR
   App["App.tsx\nstate machine"]
-  GS["services/geminiService.ts"]
+  TA["services/triviaApi.ts"]
   Shuffle["lib/shuffleArray.ts"]
   UI["components/*"]
 
-  App --> GS
-  GS --> Shuffle
+  App --> TA
+  TA --> Shuffle
   App --> UI
 ```
 
 | File | Responsibility |
 |------|----------------|
 | `App.tsx` | Game state machine; orchestrates screens |
-| `services/geminiService.ts` | `POST /api/questions`, `POST /api/results` |
+| `services/triviaApi.ts` | `POST /api/questions`, `POST /api/results` |
 | `lib/shuffleArray.ts` | Shuffles options; assigns question `id` |
 | `components/*` | Welcome, Quiz, Results, Loading, Error, Footer |
 | `types.ts` | `GameState`, `Question`, `GameResult`, categories |
@@ -93,7 +93,7 @@ stateDiagram-v2
 
 ## API contract
 
-Keep **`api/index.js`** and **`web/services/geminiService.ts`** in sync when changing shapes.
+Keep **`api/index.js`** and **`web/services/triviaApi.ts`** in sync when changing shapes.
 
 | Method | Path | Request | Response |
 |--------|------|---------|----------|

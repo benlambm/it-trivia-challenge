@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { GameState, Question, GameResult } from './types';
-import { generateQuestions, generateGameResults } from './services/geminiService';
+import { fetchQuestions, fetchGameResults } from './services/triviaApi';
 import { Difficulty, TIER_TO_DIFFICULTY, nextTier, playAgainLabel } from './lib/difficulty';
 import WelcomeScreen from './components/WelcomeScreen';
 import LoadingScreen from './components/LoadingScreen';
@@ -21,7 +21,7 @@ const App: React.FC = () => {
     setError(null);
     setGameState(GameState.LOADING_QUESTIONS);
     try {
-      const newQuestions = await generateQuestions(difficulty);
+      const newQuestions = await fetchQuestions(difficulty);
       if (!newQuestions || newQuestions.length === 0) {
         throw new Error("Received empty question set from API.");
       }
@@ -46,7 +46,7 @@ const App: React.FC = () => {
     setPendingLabel(playAgainLabel(delta));
     setGameState(GameState.LOADING_RESULTS);
     try {
-      const result = await generateGameResults(finalScore, questions.length);
+      const result = await fetchGameResults(finalScore, questions.length);
       setGameResult(result);
       setGameState(GameState.RESULTS);
     } catch (err: any) {

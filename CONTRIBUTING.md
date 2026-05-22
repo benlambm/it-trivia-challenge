@@ -94,7 +94,7 @@ The frontend and backend talk through three endpoints with specific shapes:
 If you change a shape, you need to update **both sides** in the same PR:
 
 - Backend: the relevant zod schema and prompt in [`api/index.js`](./api/index.js).
-- Frontend: the matching TypeScript interfaces in [`web/types.ts`](./web/types.ts) and the consumer in [`web/services/geminiService.ts`](./web/services/geminiService.ts).
+- Frontend: the matching TypeScript interfaces in [`web/types.ts`](./web/types.ts) and the consumer in [`web/services/triviaApi.ts`](./web/services/triviaApi.ts).
 
 If you only update one side, the app will explode at runtime in interesting ways.
 

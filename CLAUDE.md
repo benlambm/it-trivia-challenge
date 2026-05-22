@@ -14,7 +14,7 @@ Agent/operator notes for `trivia-app` — full repo for [trivia.benlamb.net](htt
 
 **systemd:** `trivia-api.service` → `/opt/trivia-app/api/`. Logs: `journalctl -u trivia-api -f`.
 
-## API contract (update `api/index.js` + `web/services/geminiService.ts` together)
+## API contract (update `api/index.js` + `web/services/triviaApi.ts` together)
 
 | Method | Path | Response |
 |--------|------|----------|

@@ -9,6 +9,7 @@ const MODEL = 'googleai/gemini-flash-latest';
 const ALLOWED_ORIGIN = 'https://trivia.benlamb.net';
 const PORT = 3000;
 const HOST = '127.0.0.1';
+const JSON_BODY_LIMIT = '2mb';
 
 const ai = genkit({ plugins: [googleAI()] });
 
@@ -67,7 +68,7 @@ const triviaResultsFlow = ai.defineFlow(
 
 const app = express();
 app.set('trust proxy', 'loopback');
-app.use(express.json());
+app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
 app.use('/api/', (req, res, next) => {
   const origin = req.get('Origin');
@@ -111,6 +112,9 @@ app.post('/api/results', async (req, res, next) => {
 
 app.use((err, _req, res, _next) => {
   console.error('[trivia-api error]', err?.stack || err);
+  if (err?.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'payload_too_large' });
+  }
   res.status(500).json({ error: 'internal_error' });
 });
 

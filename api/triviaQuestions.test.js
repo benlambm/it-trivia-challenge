@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildQuestionsPrompt, formatPreviousQuestionsForPrompt, QuestionsInputSchema } from './triviaQuestions.js';
+import {
+  buildQuestionsPrompt,
+  formatDifficultyGuardrails,
+  formatPreviousQuestionsForPrompt,
+  QuestionsInputSchema,
+} from './triviaQuestions.js';
 
 const previousQuestion = {
   category: 'Cybersecurity',
@@ -49,4 +54,26 @@ test('questions prompt omits replay context when no prior quiz is supplied', () 
 
   assert.doesNotMatch(prompt, /Previous quiz context/);
   assert.match(prompt, /Generate exactly 25 multiple choice questions/);
+});
+
+test('harder prompts forbid basic definition and acronym questions', () => {
+  const prompt = buildQuestionsPrompt({ difficulty: 'harder' });
+
+  assert.match(prompt, /Requested difficulty key: harder/);
+  assert.match(prompt, /Do not ask basic definition or acronym-expansion questions/);
+  assert.match(prompt, /What is AI\?/);
+  assert.match(prompt, /What does IP stand for\?/);
+});
+
+test('much_harder prompts require applied reasoning and tradeoffs', () => {
+  const prompt = buildQuestionsPrompt({ difficulty: 'much_harder' });
+
+  assert.match(prompt, /Requested difficulty key: much_harder/);
+  assert.match(prompt, /every question must require applied reasoning/);
+  assert.match(prompt, /troubleshooting judgment/);
+  assert.match(prompt, /plausible technical tradeoffs/);
+});
+
+test('normal prompts omit advanced-only difficulty guardrails', () => {
+  assert.equal(formatDifficultyGuardrails('normal'), '');
 });

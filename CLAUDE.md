@@ -26,7 +26,7 @@ Single maintainer: commit on **`main`**, push when asked. No branches, worktrees
 | POST | `/api/questions` | body `{ difficulty?, previousQuestions? }` → `{ questions: [{ category, text, options[4], correctAnswer }] × 25 }` |
 | POST | `/api/results` | body `{ score, total }` → `{ title, evaluation, motivation }` |
 
-Frontend sends the previous quiz questions on replay so Gemini avoids repeats, then adds `id` and shuffles `options` (`web/lib/shuffleArray.ts`). Model: `googleai/gemini-flash-latest` in `api/index.js` (`MODEL` constant).
+Frontend sends the previous quiz questions on replay so Gemini avoids repeats, then adds `id` and shuffles `options` (`web/lib/shuffleArray.ts`). API JSON body limit is `2mb` for replay payloads. Model: `googleai/gemini-flash-latest` in `api/index.js` (`MODEL` constant).
 
 ## CI/CD automated pipeline
 - **Node:** `>=22.12.0` (see `.nvmrc`; `web/` and `api/` `engines`). CI uses Node 22.

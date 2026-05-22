@@ -22,8 +22,8 @@ const DIFFICULTY_DESCRIPTORS = {
   much_easier: 'elementary to middle-school level: very basic, intuitive concepts about everyday technology (e.g., "What does Wi-Fi let devices do?", "What is a password used for?"). Use simple wording and obvious distractors.',
   easier: 'early high-school level: common-knowledge IT concepts with simple wording. Distractors should be plausible but clearly distinguishable to anyone who has used a computer.',
   normal: 'high-school level: solid foundational IT concepts a curious high-school student should be able to reason through. Balanced distractors.',
-  harder: 'advanced high-school / introductory college level: more specific terminology, subtler distractors, deeper conceptual nuance. Distinctions between similar concepts (e.g., TCP vs. UDP, symmetric vs. asymmetric encryption).',
-  much_harder: 'introductory college level: precise technical terminology, specific protocols, standards, and common gotchas. Distractors should require real understanding to eliminate.',
+  harder: 'introductory college level: applied scenarios, specific terminology, subtler distractors, and deeper conceptual nuance. Questions should require reasoning about distinctions between similar concepts (e.g., TCP vs. UDP behavior, symmetric vs. asymmetric encryption tradeoffs), not just remembering definitions.',
+  much_harder: 'college / early professional level: precise technical terminology, specific protocols, standards, edge cases, common gotchas, troubleshooting tradeoffs, and applied reasoning. Questions should require real understanding to eliminate plausible distractors.',
 };
 
 export const QuestionsInputSchema = z.object({
@@ -46,11 +46,31 @@ export function formatPreviousQuestionsForPrompt(previousQuestions = []) {
   `;
 }
 
+export function formatDifficultyGuardrails(difficulty = 'normal') {
+  if (difficulty !== 'harder' && difficulty !== 'much_harder') return '';
+
+  const extraRequirement =
+    difficulty === 'much_harder'
+      ? '- For much_harder, every question must require applied reasoning, troubleshooting judgment, standards knowledge, or selecting between plausible technical tradeoffs.'
+      : '- For harder, most questions should require applied reasoning or comparing closely related concepts.';
+
+  return `
+    Difficulty guardrails:
+    - The requested difficulty is mandatory; do not fall back to basic recall questions.
+    - Do not ask basic definition or acronym-expansion questions at this difficulty.
+    - Forbidden examples: "What is AI?", "What does IP stand for?", "What does CPU stand for?", "What is a password?", "What does Wi-Fi do?"
+    ${extraRequirement}
+    - Distractors should be plausible to a learner who knows the basics, not obviously silly or unrelated.
+  `;
+}
+
 export function buildQuestionsPrompt({ difficulty = 'normal', previousQuestions = [] } = {}) {
   const descriptor = DIFFICULTY_DESCRIPTORS[difficulty] ?? DIFFICULTY_DESCRIPTORS.normal;
   const previousQuestionsPrompt = formatPreviousQuestionsForPrompt(previousQuestions);
+  const difficultyGuardrails = formatDifficultyGuardrails(difficulty);
 
   return `
+    Requested difficulty key: ${difficulty}
     Create an IT Trivia game at this difficulty: ${descriptor}
     Generate exactly 25 multiple choice questions.
 
@@ -66,6 +86,7 @@ export function buildQuestionsPrompt({ difficulty = 'normal', previousQuestions 
     - Questions should be engaging but educational.
     - Provide 4 options per question.
     - Ensure the correct answer is accurate.
+    ${difficultyGuardrails}
     ${previousQuestionsPrompt}
 
     Specific Category Instructions:

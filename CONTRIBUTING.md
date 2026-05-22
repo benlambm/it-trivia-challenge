@@ -38,7 +38,7 @@ npm run dev                   # http://localhost:5173 (proxies /api to the backe
 
 The Vite dev server proxies `/api` to the backend (see `web/vite.config.ts`). After that, edit code and Vite reloads instantly. The backend restart is manual — `Ctrl-C` and `node index.js` again — unless you wire up `node --watch`.
 
-**Node version:** Vite 8 requires Node `^20.19.0 || >=22.12.0`. Run `npm test` and `npm run verify:bundle` in `web/` before opening a PR.
+**Node version:** Node `>=22.12.0` (Vite 8). Run `npm test` and `npm run verify:bundle` in `web/` before pushing.
 
 ---
 

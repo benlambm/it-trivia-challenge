@@ -6,6 +6,7 @@ alwaysApply: false
 
 # API backend (`api/`)
 
+- **Node:** `>=22.12.0` (see repo `.nvmrc`).
 - All routes and Gemini logic live in `api/index.js` (~single file).
 - **Model:** `MODEL` constant at top (`googleai/gemini-flash-latest`). Restart after change: `systemctl restart trivia-api` (prod).
 - **Secrets:** `GOOGLE_GENAI_API_KEY` in `.env` only; use `.env.example` as template.

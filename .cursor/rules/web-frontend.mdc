@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Web frontend (`web/`)
 
-- **Node:** `^20.19.0 || >=22.12.0` (Vite 8).
+- **Node:** `>=22.12.0` (Vite 8; matches CI).
 - **Dev:** `npm run dev` → `http://localhost:5173`; `/api` proxied to `:3000` (`vite.config.ts`). API must be running separately.
 - **Tests:** `npm test` (Vitest). Before PR: `npm run verify:bundle`.
 - **Build:** Edit `web/index.html` + `npm run build` — deployed `index.html` is generated output.

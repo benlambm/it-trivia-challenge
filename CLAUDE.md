@@ -29,7 +29,7 @@ Single maintainer: commit on **`main`**, push when asked. No branches, worktrees
 Frontend adds `id`, shuffles `options` (`web/lib/shuffleArray.ts`). Model: `googleai/gemini-flash-latest` in `api/index.js` (`MODEL` constant).
 
 ## CI/CD automated pipeline
-- **CI:** `.github/workflows/ci.yml` — Node 22, `web/` test + verify.
+- **Node:** `>=22.12.0` (see `.nvmrc`; `web/` and `api/` `engines`). CI uses Node 22.
 - **Deploy:** `.github/workflows/deploy.yml` on push to `main`; backend restart only if `api/` changed in that push.
 - **Bundled:** React in `dist/assets/*.js`. **CDN:** Tailwind (`cdn.tailwindcss.com`).
 - Edit `web/index.html` + rebuild — never hand-edit deployed `/var/www/.../index.html`.

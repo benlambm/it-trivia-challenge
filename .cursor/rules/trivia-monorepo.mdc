@@ -7,6 +7,11 @@ alwaysApply: true
 
 `web/` = React 19 + Vite 8 SPA. `api/` = Genkit/Express on `127.0.0.1:3000`. Production static files live in `/var/www/trivia.benlamb.net/` (artifacts only — never edit by hand).
 
+## Workflow (single maintainer)
+
+- One person runs this repo — work on **`main`**; no feature branches, worktrees, or PRs unless explicitly requested.
+- Commit and push to `main` when asked; deploy runs on push via GitHub Actions.
+
 ## API contract (change both sides)
 
 | Endpoint | Shape |

@@ -2,6 +2,10 @@
 
 Agent/operator notes for `trivia-app` — full repo for [trivia.benlamb.net](https://trivia.benlamb.net).
 
+## Workflow
+
+Single maintainer: commit on **`main`**, push when asked. No branches, worktrees, or PRs unless the user explicitly wants them. CI/deploy trigger on push to `main`.
+
 ## Layout
 
 | Path | Purpose |

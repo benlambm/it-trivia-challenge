@@ -87,7 +87,7 @@ stateDiagram-v2
   RESULTS --> WELCOME: Play again
 ```
 
-**Start game:** Welcome → `POST /api/questions` → add `id`, shuffle options → quiz (25 questions, 5 categories × 5 each).
+**Start game:** Welcome optionally adjusts starting difficulty → `POST /api/questions` (plus previous quiz questions on replay) → add `id`, shuffle options → quiz (25 questions, 5 categories × 5 each).
 
 **Finish game:** Tally score → `POST /api/results` with `{ score, total }` → personalized title, evaluation, motivation.
 
@@ -98,10 +98,10 @@ Keep **`api/index.js`** and **`web/services/triviaApi.ts`** in sync when changin
 | Method | Path | Request | Response |
 |--------|------|---------|----------|
 | `GET` | `/api/health` | — | `{ "status": "ok" }` |
-| `POST` | `/api/questions` | — | `{ questions: [{ category, text, options[4], correctAnswer }] × 25 }` |
+| `POST` | `/api/questions` | `{ difficulty?, previousQuestions? }` | `{ questions: [{ category, text, options[4], correctAnswer }] × 25 }` |
 | `POST` | `/api/results` | `{ score, total }` | `{ title, evaluation, motivation }` |
 
-The frontend adds `id` and shuffles `options` after fetch; the API returns canonical `correctAnswer` text.
+The frontend sends full previous quiz questions on replay to help Gemini avoid exact or near-duplicate questions. It adds `id` and shuffles `options` after fetch; the API returns canonical `correctAnswer` text.
 
 ## Backend (`api/`)
 
@@ -109,7 +109,7 @@ Single entry point: **`api/index.js`** — Express routes plus two Genkit flows 
 
 | Flow | Input | Output |
 |------|-------|--------|
-| `triviaQuestionsFlow` | — | 25 MCQs across 5 IT categories (5 per category) |
+| `triviaQuestionsFlow` | `{ difficulty?, previousQuestions? }` | 25 MCQs across 5 IT categories (5 per category) |
 | `triviaResultsFlow` | `{ score, total }` | Fun title, evaluation, motivation |
 
 | Concern | Detail |
@@ -123,7 +123,7 @@ Single entry point: **`api/index.js`** — Express routes plus two Genkit flows 
 
 ```mermaid
 flowchart LR
-  PR["Pull request"] --> CI["ci.yml\ntest + verify:bundle"]
+  PR["Pull request"] --> CI["ci.yml\napi tests + web coverage + verify:bundle"]
   Main["Push to main"] --> Deploy["deploy.yml"]
   Deploy --> Build["Build web/"]
   Deploy --> Verify["verify:bundle\nno SDK or key in dist"]
@@ -131,7 +131,7 @@ flowchart LR
   Deploy --> API["If api/ changed:\nreinstall deps + restart API service"]
 ```
 
-- **`ci.yml`:** Vitest in `web/`, then `npm run verify:bundle` (ensures no `@google/genai` or `AIza…` in client bundles).
+- **`ci.yml`:** Node tests in `api/`, Vitest coverage in `web/`, then `npm run verify:bundle` (ensures no `@google/genai` or `AIza…` in client bundles).
 - **`deploy.yml`:** SSH to VPS, `git pull`, build frontend, rotate nginx static root, restart the API systemd unit when `api/` changed.
 
 Operator detail (paths, rollback, journalctl): [CLAUDE.md](../CLAUDE.md).

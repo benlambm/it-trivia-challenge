@@ -12,7 +12,7 @@ There is no question bank! Generative AI crafts new questions on the spot when y
 
 ## Contributing
 
-Humans and nonhumans welcome! PRs must run [ci.yml](./.github/workflows/ci.yml) (tests + bundle checks).
+Humans and nonhumans welcome! PRs must run [ci.yml](./.github/workflows/ci.yml) (API tests + web coverage + bundle checks).
 
 Ops detail: [CLAUDE.md](./CLAUDE.md). Contributing: [CONTRIBUTING.md](./CONTRIBUTING.md).
 

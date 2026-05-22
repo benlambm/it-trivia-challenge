@@ -23,13 +23,14 @@ Single maintainer: commit on **`main`**, push when asked. No branches, worktrees
 | Method | Path | Response |
 |--------|------|----------|
 | GET | `/api/health` | `{ "status": "ok" }` |
-| POST | `/api/questions` | `{ questions: [{ category, text, options[4], correctAnswer }] × 25 }` |
+| POST | `/api/questions` | body `{ difficulty?, previousQuestions? }` → `{ questions: [{ category, text, options[4], correctAnswer }] × 25 }` |
 | POST | `/api/results` | body `{ score, total }` → `{ title, evaluation, motivation }` |
 
-Frontend adds `id`, shuffles `options` (`web/lib/shuffleArray.ts`). Model: `googleai/gemini-flash-latest` in `api/index.js` (`MODEL` constant).
+Frontend sends the previous quiz questions on replay so Gemini avoids repeats, then adds `id` and shuffles `options` (`web/lib/shuffleArray.ts`). Model: `googleai/gemini-flash-latest` in `api/index.js` (`MODEL` constant).
 
 ## CI/CD automated pipeline
 - **Node:** `>=22.12.0` (see `.nvmrc`; `web/` and `api/` `engines`). CI uses Node 22.
+- **CI:** `.github/workflows/ci.yml` runs `api/` tests, `web/` coverage tests, and `web/` bundle verification.
 - **Deploy:** `.github/workflows/deploy.yml` on push to `main`; backend restart only if `api/` changed in that push.
 - **Bundled:** React in `dist/assets/*.js`. **CDN:** Tailwind (`cdn.tailwindcss.com`).
 - Edit `web/index.html` + rebuild — never hand-edit deployed `/var/www/.../index.html`.

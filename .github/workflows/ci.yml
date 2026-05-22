@@ -7,6 +7,24 @@ on:
     branches: [main]
 
 jobs:
+  api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - name: Install and test API
+        run: |
+          cd api
+          npm ci
+          npm test
+
   web:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -23,5 +41,5 @@ jobs:
         run: |
           cd web
           npm ci
-          npm test
+          npm run test:coverage
           npm run verify:bundle

@@ -11,6 +11,18 @@ export const TIER_TO_DIFFICULTY: Record<number, Difficulty> = {
   2: 'much_harder',
 };
 
+export const TIER_LABELS: Record<number, string> = {
+  [-2]: 'Much Easier',
+  [-1]: 'Easier',
+  0: 'Normal',
+  1: 'Harder',
+  2: 'Much Harder',
+};
+
+export function difficultyLabel(tier: number): string {
+  return TIER_LABELS[tier] ?? TIER_LABELS[0];
+}
+
 export function scoreDelta(score: number): number {
   if (score > 20) return 1;
   if (score >= 15) return 0;

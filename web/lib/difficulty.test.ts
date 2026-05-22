@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nextTier, playAgainLabel, scoreDelta, TIER_TO_DIFFICULTY } from './difficulty';
+import { difficultyLabel, nextTier, playAgainLabel, scoreDelta, TIER_TO_DIFFICULTY } from './difficulty';
 
 describe('scoreDelta', () => {
   it.each([
@@ -60,5 +60,21 @@ describe('TIER_TO_DIFFICULTY', () => {
     expect(TIER_TO_DIFFICULTY[0]).toBe('normal');
     expect(TIER_TO_DIFFICULTY[1]).toBe('harder');
     expect(TIER_TO_DIFFICULTY[2]).toBe('much_harder');
+  });
+});
+
+describe('difficultyLabel', () => {
+  it.each([
+    [-2, 'Much Easier'],
+    [-1, 'Easier'],
+    [0, 'Normal'],
+    [1, 'Harder'],
+    [2, 'Much Harder'],
+  ])('tier %i → "%s"', (tier, expected) => {
+    expect(difficultyLabel(tier)).toBe(expected);
+  });
+
+  it('falls back to Normal for unknown tiers', () => {
+    expect(difficultyLabel(99)).toBe('Normal');
   });
 });

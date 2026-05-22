@@ -11,6 +11,8 @@ alwaysApply: false
 - **Model:** `MODEL` constant at top (`googleai/gemini-flash-latest`). Restart after change: `systemctl restart trivia-api` (prod).
 - **Secrets:** `GOOGLE_GENAI_API_KEY` in `.env` only; use `.env.example` as template.
 - **Structured output:** zod schemas + `output: { schema }` on `ai.generate()` — do not parse free-form LLM text.
+- **Questions input:** `/api/questions` accepts optional `previousQuestions`; prompt must tell Gemini not to repeat or closely paraphrase prior quiz questions.
+- **Tests:** `npm test` covers question input schema and prompt construction.
 - **Local:** `cd api && npm ci && node index.js` → `http://127.0.0.1:3000/api/health`.
 - **CORS/origin:** production allows `https://trivia.benlamb.net`; dev uses Vite proxy (same-origin from browser).
 

@@ -8,9 +8,9 @@ alwaysApply: false
 
 - **Node:** `>=22.12.0` (Vite 8; matches CI).
 - **Dev:** `npm run dev` → `http://localhost:5173`; `/api` proxied to `:3000` (`vite.config.ts`). API must be running separately.
-- **Tests:** `npm test` (Vitest). Before PR: `npm run verify:bundle`.
+- **Tests:** `npm test` (Vitest), `npm run test:coverage` for CI coverage. Before push: `npm run verify:bundle`.
 - **Build:** Edit `web/index.html` + `npm run build` — deployed `index.html` is generated output.
 - **Bundling:** React is bundled; Tailwind loads from CDN (`cdn.tailwindcss.com`). Do not add Gemini SDK or API keys to the client.
 - **Vite docs:** `docs/vite-llms-full.txt` (full), `docs/vite-llms.txt` (TOC).
 
-Game state machine: `App.tsx`. API client: `services/triviaApi.ts` (`fetchQuestions`, `fetchGameResults` → `/api/*`).
+Game state machine: `App.tsx`. Welcome screen includes a minimal starting-difficulty slider using the shared tier model. API client: `services/triviaApi.ts` (`fetchQuestions`, `fetchGameResults` → `/api/*`). On replay, send prior quiz questions to `fetchQuestions` so the API can avoid repeats.

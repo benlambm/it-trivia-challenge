@@ -17,11 +17,11 @@ const App: React.FC = () => {
   const [difficultyTier, setDifficultyTier] = useState(0);
   const [pendingLabel, setPendingLabel] = useState('Play Again');
 
-  const startNewGame = useCallback(async (difficulty: Difficulty) => {
+  const startNewGame = useCallback(async (difficulty: Difficulty, previousQuestions: Question[] = []) => {
     setError(null);
     setGameState(GameState.LOADING_QUESTIONS);
     try {
-      const newQuestions = await fetchQuestions(difficulty);
+      const newQuestions = await fetchQuestions(difficulty, previousQuestions);
       if (!newQuestions || newQuestions.length === 0) {
         throw new Error("Received empty question set from API.");
       }
@@ -75,7 +75,11 @@ const App: React.FC = () => {
       )}
 
       {gameState === GameState.WELCOME && (
-        <WelcomeScreen onStart={() => startNewGame(TIER_TO_DIFFICULTY[difficultyTier])} />
+        <WelcomeScreen
+          onStart={() => startNewGame(TIER_TO_DIFFICULTY[difficultyTier])}
+          difficultyTier={difficultyTier}
+          onDifficultyTierChange={setDifficultyTier}
+        />
       )}
 
       {gameState === GameState.LOADING_QUESTIONS && (
@@ -96,7 +100,7 @@ const App: React.FC = () => {
       {gameState === GameState.RESULTS && gameResult && (
         <ResultsScreen
           result={gameResult}
-          onPlayAgain={() => startNewGame(TIER_TO_DIFFICULTY[difficultyTier])}
+          onPlayAgain={() => startNewGame(TIER_TO_DIFFICULTY[difficultyTier], questions)}
           playAgainLabel={pendingLabel}
         />
       )}

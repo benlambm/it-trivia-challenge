@@ -1,11 +1,14 @@
 import React from 'react';
 import { Category, CATEGORY_COLORS } from '../types';
+import { difficultyLabel, TIER_MAX, TIER_MIN } from '../lib/difficulty';
 
 interface WelcomeScreenProps {
   onStart: () => void;
+  difficultyTier: number;
+  onDifficultyTierChange: (tier: number) => void;
 }
 
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart }) => {
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart, difficultyTier, onDifficultyTierChange }) => {
   const categories = Object.values(Category);
 
   return (
@@ -47,6 +50,29 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </button>
+
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+            <label htmlFor="starting-difficulty" className="flex items-center justify-between text-sm font-black text-[#173A45]">
+              <span>Starting difficulty</span>
+              <span className="text-[#D63A4C]">{difficultyLabel(difficultyTier)}</span>
+            </label>
+            <input
+              id="starting-difficulty"
+              type="range"
+              min={TIER_MIN}
+              max={TIER_MAX}
+              step={1}
+              value={difficultyTier}
+              onChange={(event) => onDifficultyTierChange(Number(event.currentTarget.value))}
+              aria-label="Starting difficulty"
+              className="mt-2 w-full accent-[#E87722]"
+            />
+            <div className="mt-1 flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400" aria-hidden="true">
+              <span>Easier</span>
+              <span>Normal</span>
+              <span>Harder</span>
+            </div>
+          </div>
           
           <div className="mt-8 flex items-center justify-center space-x-2">
             <span className="h-2 w-2 bg-[#D63A4C] rounded-full animate-pulse"></span>

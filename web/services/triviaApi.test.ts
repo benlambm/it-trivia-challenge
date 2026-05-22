@@ -66,6 +66,35 @@ describe('fetchQuestions', () => {
     );
   });
 
+  it('forwards previous quiz questions without frontend-only ids', async () => {
+    const fetchMock = stubQuestionsFetch();
+    await fetchQuestions('harder', [
+      {
+        id: 7,
+        category: 'Cybersecurity',
+        text: 'What is phishing?',
+        options: ['Scam email', 'Fast network', 'Backup type', 'Database key'],
+        correctAnswer: 'Scam email',
+      },
+    ]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/questions',
+      expect.objectContaining({
+        body: JSON.stringify({
+          difficulty: 'harder',
+          previousQuestions: [
+            {
+              category: 'Cybersecurity',
+              text: 'What is phishing?',
+              options: ['Scam email', 'Fast network', 'Backup type', 'Database key'],
+              correctAnswer: 'Scam email',
+            },
+          ],
+        }),
+      }),
+    );
+  });
+
   it("defaults to difficulty 'normal' when called with no argument", async () => {
     const fetchMock = stubQuestionsFetch();
     await fetchQuestions();

@@ -30,14 +30,31 @@ interface QuestionsResponse {
   }>;
 }
 
+type PreviousQuestion = Pick<Question, 'category' | 'text' | 'options' | 'correctAnswer'>;
+
 interface ResultsResponse {
   title: string;
   evaluation: string;
   motivation: string;
 }
 
-export const fetchQuestions = async (difficulty: Difficulty = 'normal'): Promise<Question[]> => {
-  const { questions } = await postJson<QuestionsResponse>('/api/questions', { difficulty });
+export const fetchQuestions = async (
+  difficulty: Difficulty = 'normal',
+  previousQuestions: Question[] = [],
+): Promise<Question[]> => {
+  const previousQuestionPayload: PreviousQuestion[] = previousQuestions.map(
+    ({ category, text, options, correctAnswer }) => ({
+      category,
+      text,
+      options,
+      correctAnswer,
+    }),
+  );
+  const body =
+    previousQuestionPayload.length > 0
+      ? { difficulty, previousQuestions: previousQuestionPayload }
+      : { difficulty };
+  const { questions } = await postJson<QuestionsResponse>('/api/questions', body);
   if (!Array.isArray(questions) || questions.length === 0) {
     throw new Error('Empty question set from API.');
   }

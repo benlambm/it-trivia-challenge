@@ -38,7 +38,7 @@ npm run dev                   # http://localhost:5173 (proxies /api to the backe
 
 The Vite dev server proxies `/api` to the backend (see `web/vite.config.ts`). After that, edit code and Vite reloads instantly. The backend restart is manual — `Ctrl-C` and `node index.js` again — unless you wire up `node --watch`.
 
-**Node version:** Node `>=22.12.0` (Vite 8). Run `npm test` and `npm run verify:bundle` in `web/` before pushing.
+**Node version:** Node `>=22.12.0` (Vite 8). Run `npm test` in `api/`, plus `npm run test:coverage` and `npm run verify:bundle` in `web/` before pushing.
 
 ---
 
@@ -47,7 +47,7 @@ The Vite dev server proxies `/api` to the backend (see `web/vite.config.ts`). Af
 1. **Fork the repo** (or create a branch if you have push access).
 2. **Branch from `main`**: `git checkout -b your-thing`. Branch names like `feature/share-card`, `fix/loading-flash`, or `prompt/better-cyber-questions` are fine — be descriptive.
 3. **Make your change.** Small, focused changes get merged faster than sprawling ones. If you're tempted to do two unrelated things, that's two PRs.
-4. **Run automated checks** in `web/`: `npm test` and `npm run verify:bundle`. **Test manually**: play through a full game (Welcome → Loading → Quiz → Results). If you touched `api/index.js`, hit `curl -fsS http://127.0.0.1:3000/api/health` and confirm questions/results still return valid JSON.
+4. **Run automated checks**: `npm test` in `api/`, plus `npm run test:coverage` and `npm run verify:bundle` in `web/`. **Test manually**: play through a full game (Welcome → Loading → Quiz → Results). If you touched `api/index.js`, hit `curl -fsS http://127.0.0.1:3000/api/health` and confirm questions/results still return valid JSON.
 5. **Push and open a PR** against `main`. Describe what you did and why. Screenshots/GIFs help a lot for UI changes.
 6. **CI runs automatically** on the PR ([`ci.yml`](./.github/workflows/ci.yml): unit tests + production build + bundle security checks). It doesn't auto-deploy from PRs — only `main` does.
 
@@ -88,7 +88,7 @@ The frontend and backend talk through three endpoints with specific shapes:
 | Endpoint | Request | Response |
 |---|---|---|
 | `GET /api/health` | (none) | `{ "status": "ok" }` |
-| `POST /api/questions` | (none) | `{ "questions": [{ category, text, options[4], correctAnswer }, ...25 ] }` |
+| `POST /api/questions` | `{ difficulty?, previousQuestions? }` | `{ "questions": [{ category, text, options[4], correctAnswer }, ...25 ] }` |
 | `POST /api/results` | `{ score, total }` | `{ title, evaluation, motivation }` |
 
 If you change a shape, you need to update **both sides** in the same PR:

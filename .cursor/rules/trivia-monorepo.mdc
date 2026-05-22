@@ -17,10 +17,10 @@ alwaysApply: true
 | Endpoint | Shape |
 |----------|--------|
 | `GET /api/health` | `{ status: "ok" }` |
-| `POST /api/questions` | `{ questions: [{ category, text, options[4], correctAnswer }] × 25 }` |
+| `POST /api/questions` | body `{ difficulty?, previousQuestions? }` → `{ questions: [{ category, text, options[4], correctAnswer }] × 25 }` |
 | `POST /api/results` | body `{ score, total }` → `{ title, evaluation, motivation }` |
 
-Wire format: `api/index.js` (zod + flows) and `web/services/triviaApi.ts`. Frontend assigns `id` and shuffles options via `web/lib/shuffleArray.ts`.
+Wire format: `api/index.js` (zod + flows) and `web/services/triviaApi.ts`. Frontend sends prior quiz questions on replay, then assigns `id` and shuffles options via `web/lib/shuffleArray.ts`.
 
 ## Security
 

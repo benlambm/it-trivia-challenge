@@ -3,6 +3,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { genkit, z } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
+import { buildQuestionsPrompt, QuestionsInputSchema, QuestionsOutputSchema } from './triviaQuestions.js';
 
 const MODEL = 'googleai/gemini-flash-latest';
 const ALLOWED_ORIGIN = 'https://trivia.benlamb.net';
@@ -11,68 +12,20 @@ const HOST = '127.0.0.1';
 
 const ai = genkit({ plugins: [googleAI()] });
 
-const QuestionSchema = z.object({
-  category: z.string(),
-  text: z.string(),
-  options: z.array(z.string()).length(4),
-  correctAnswer: z.string(),
-});
-
-const QuestionsOutputSchema = z.object({
-  questions: z.array(QuestionSchema).length(25),
-});
-
 const ResultsOutputSchema = z.object({
   title: z.string(),
   evaluation: z.string(),
   motivation: z.string(),
 });
 
-const CATEGORY_NETWORKING = 'Networking & Internet';
-const CATEGORY_AI = 'Artificial Intelligence';
-const CATEGORY_DEV = 'Program and Database Development';
-const CATEGORY_CYBER = 'Cybersecurity';
-const CATEGORY_OPS = 'IT Operations and Support';
-
-const DIFFICULTY_LEVELS = ['much_easier', 'easier', 'normal', 'harder', 'much_harder'];
-const DIFFICULTY_DESCRIPTORS = {
-  much_easier: 'elementary to middle-school level: very basic, intuitive concepts about everyday technology (e.g., "What does Wi-Fi let devices do?", "What is a password used for?"). Use simple wording and obvious distractors.',
-  easier: 'early high-school level: common-knowledge IT concepts with simple wording. Distractors should be plausible but clearly distinguishable to anyone who has used a computer.',
-  normal: 'high-school level: solid foundational IT concepts a curious high-school student should be able to reason through. Balanced distractors.',
-  harder: 'advanced high-school / introductory college level: more specific terminology, subtler distractors, deeper conceptual nuance. Distinctions between similar concepts (e.g., TCP vs. UDP, symmetric vs. asymmetric encryption).',
-  much_harder: 'introductory college level: precise technical terminology, specific protocols, standards, and common gotchas. Distractors should require real understanding to eliminate.',
-};
-
 const triviaQuestionsFlow = ai.defineFlow(
   {
     name: 'triviaQuestionsFlow',
-    inputSchema: z.object({
-      difficulty: z.enum(DIFFICULTY_LEVELS).default('normal'),
-    }),
+    inputSchema: QuestionsInputSchema,
     outputSchema: QuestionsOutputSchema,
   },
-  async ({ difficulty }) => {
-    const descriptor = DIFFICULTY_DESCRIPTORS[difficulty] ?? DIFFICULTY_DESCRIPTORS.normal;
-    const prompt = `
-    Create an IT Trivia game at this difficulty: ${descriptor}
-    Generate exactly 25 multiple choice questions.
-
-    The questions must be divided evenly (5 questions per category) across these 5 categories, in this specific order:
-    1. ${CATEGORY_NETWORKING}
-    2. ${CATEGORY_AI}
-    3. ${CATEGORY_DEV}
-    4. ${CATEGORY_CYBER}
-    5. ${CATEGORY_OPS}
-
-    Rules:
-    - Answer choices must be short phrases or single words.
-    - Questions should be engaging but educational.
-    - Provide 4 options per question.
-    - Ensure the correct answer is accurate.
-
-    Specific Category Instructions:
-    - For "${CATEGORY_OPS}": Focus strictly on practical help desk scenarios, hardware/software troubleshooting, and problem-solving (e.g., "A user's screen is black," "Printer won't print"). Ask "What is the BEST first step?" or "What should you check first?". DO NOT include ITIL, ITSM, or complex framework questions. Keep it hands-on and high-school friendly.
-  `;
+  async ({ difficulty, previousQuestions = [] }) => {
+    const prompt = buildQuestionsPrompt({ difficulty, previousQuestions });
     const { output } = await ai.generate({
       model: MODEL,
       system: 'You are an expert IT Educator creating a game for potential college students.',
@@ -114,7 +67,7 @@ const triviaResultsFlow = ai.defineFlow(
 
 const app = express();
 app.set('trust proxy', 'loopback');
-app.use(express.json({ limit: '1kb' }));
+app.use(express.json());
 
 app.use('/api/', (req, res, next) => {
   const origin = req.get('Origin');

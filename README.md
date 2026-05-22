@@ -1,5 +1,10 @@
 # IT Trivia Game - AI-generated
 
+[![CI](https://github.com/benlambm/it-trivia-challenge/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/benlambm/it-trivia-challenge/actions/workflows/ci.yml)
+[![Deploy to VPS](https://github.com/benlambm/it-trivia-challenge/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/benlambm/it-trivia-challenge/actions/workflows/deploy.yml)
+[![Live Site](https://img.shields.io/website?url=https%3A%2F%2Ftrivia.benlamb.net&label=trivia.benlamb.net)](https://trivia.benlamb.net)
+[![Node](https://img.shields.io/badge/node-%3E%3D22.12.0-brightgreen)](.nvmrc)
+
 **Live:** [trivia.benlamb.net](https://trivia.benlamb.net)
 
 There is no question bank! Generative AI crafts new questions on the spot when you click Start New Game. Complete the IT trivia quiz to receive personalized AI feedback and coaching!

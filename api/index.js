@@ -8,15 +8,15 @@ import { buildQuestionsPrompt, QuestionsInputSchema, QuestionsOutputSchema } fro
 // Model is env-overridable (TRIVIA_MODEL in .env) so it can be changed with a
 // restart instead of a code edit + redeploy.
 //
-// TODO: move to googleai/gemini-3.7-flash once Google's capacity recovers.
-// Measured on 2026-08-17 against the real 25-question generateContent workload:
-//   gemini-3.7-flash     0/8  ok  <- preferred, but 503 "high demand" on every call
-//   gemini-flash-latest  0/4  ok  <- floating alias, resolves to a congested model
-//   gemini-3.6-flash    11/12 ok  <- current pin
-//   gemini-3.5-flash     4/4  ok
-//   gemini-2.5-flash     0/4  ok  <- retired: 404 "no longer available to new users"
-// Retest with: TRIVIA_MODEL=googleai/gemini-3.7-flash, then watch for 503s.
-const DEFAULT_MODEL = 'googleai/gemini-3.6-flash';
+// gemini-3.7-flash is the preferred model. It was unusable from 2026-08-17 to
+// 2026-08-29 (503 "high demand" on nearly every real 25-question generation),
+// and production ran pinned to gemini-3.6-flash in the meantime. Retested on
+// 2026-09-01: 6/6 first-attempt successes in 11-49s, so it is the default again.
+// gemini-3.6-flash remains the known-good fallback. gemini-flash-latest is a
+// floating alias that has resolved to a congested model, and gemini-2.5-flash
+// is retired (404). If "transient upstream error" shows up in the journal, set
+// TRIVIA_MODEL=googleai/gemini-3.6-flash in .env and restart trivia-api.
+const DEFAULT_MODEL = 'googleai/gemini-3.7-flash';
 const MODEL = process.env.TRIVIA_MODEL || DEFAULT_MODEL;
 
 const ALLOWED_ORIGIN = 'https://trivia.benlamb.net';
@@ -24,11 +24,14 @@ const PORT = 3000;
 const HOST = '127.0.0.1';
 const JSON_BODY_LIMIT = '2mb';
 
-// nginx fronts this service with `proxy_read_timeout 60s`, so the whole
+// nginx fronts this service with `proxy_read_timeout 180s`, so the whole
 // request -- including retries -- has to finish inside that window or the user
 // gets a 504 instead of our error. A successful 25-question generation runs
-// ~19-33s, so we only start another attempt if there's plausibly time for it.
-const RETRY_BUDGET_MS = Number(process.env.TRIVIA_RETRY_BUDGET_MS || 55_000);
+// ~11-49s and Google can hold a failing call for ~70s before shedding it, so
+// the budget for *starting* attempts stays ~60s below the nginx timeout, and we
+// only start another attempt if there's plausibly time for it. Keep this in
+// step with the nginx site config if either side changes.
+const RETRY_BUDGET_MS = Number(process.env.TRIVIA_RETRY_BUDGET_MS || 120_000);
 const MIN_ATTEMPT_MS = Number(process.env.TRIVIA_MIN_ATTEMPT_MS || 18_000);
 const MAX_BACKOFF_MS = 2_000;
 

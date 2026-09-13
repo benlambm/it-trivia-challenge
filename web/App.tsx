@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { GameState, Question, GameResult } from './types';
 import { fetchQuestions, fetchGameResults } from './services/triviaApi';
-import { Difficulty, TIER_TO_DIFFICULTY, nextTier, playAgainLabel } from './lib/difficulty';
+import { DEFAULT_TIER, Difficulty, TIER_TO_DIFFICULTY, nextTier, playAgainLabel } from './lib/difficulty';
 import WelcomeScreen from './components/WelcomeScreen';
 import LoadingScreen from './components/LoadingScreen';
 import QuizScreen from './components/QuizScreen';
@@ -14,7 +14,7 @@ const App: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [difficultyTier, setDifficultyTier] = useState(0);
+  const [difficultyTier, setDifficultyTier] = useState(DEFAULT_TIER);
   const [pendingLabel, setPendingLabel] = useState('Play Again');
 
   const startNewGame = useCallback(async (difficulty: Difficulty, previousQuestions: Question[] = []) => {

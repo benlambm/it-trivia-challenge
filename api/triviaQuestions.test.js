@@ -15,7 +15,7 @@ const previousQuestion = {
 };
 
 test('questions input defaults to normal difficulty', () => {
-  assert.equal(QuestionsInputSchema.parse({}).difficulty, 'normal');
+  assert.equal(QuestionsInputSchema.parse({}).difficulty, 'easier');
 });
 
 test('questions input accepts previous quiz questions', () => {

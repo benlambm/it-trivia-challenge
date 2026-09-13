@@ -1,6 +1,6 @@
 import { Question, GameResult } from '../types';
 import { shuffleArray } from '../lib/shuffleArray';
-import type { Difficulty } from '../lib/difficulty';
+import { DEFAULT_DIFFICULTY, type Difficulty } from '../lib/difficulty';
 
 async function postJson<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
@@ -39,7 +39,7 @@ interface ResultsResponse {
 }
 
 export const fetchQuestions = async (
-  difficulty: Difficulty = 'normal',
+  difficulty: Difficulty = DEFAULT_DIFFICULTY,
   previousQuestions: Question[] = [],
 ): Promise<Question[]> => {
   const previousQuestionPayload: PreviousQuestion[] = previousQuestions.map(

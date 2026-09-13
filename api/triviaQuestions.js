@@ -27,7 +27,8 @@ const DIFFICULTY_DESCRIPTORS = {
 };
 
 export const QuestionsInputSchema = z.object({
-  difficulty: z.enum(DIFFICULTY_LEVELS).default('normal'),
+  // Matches the web slider's DEFAULT_TIER (-1) so a bare request behaves like an untouched slider.
+  difficulty: z.enum(DIFFICULTY_LEVELS).default('easier'),
   previousQuestions: z.array(QuestionSchema).max(25).optional(),
 });
 

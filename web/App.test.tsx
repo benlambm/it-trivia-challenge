@@ -91,7 +91,7 @@ describe('App replay flow', () => {
     vi.mocked(fetchGameResults).mockReset();
   });
 
-  it('passes the previous quiz into the next harder replay request', async () => {
+  it('passes the previous quiz into the next replay request one tier up', async () => {
     vi.mocked(fetchQuestions).mockResolvedValueOnce(firstQuestions).mockResolvedValueOnce(secondQuestions);
     vi.mocked(fetchGameResults).mockResolvedValue(result);
 
@@ -105,7 +105,8 @@ describe('App replay flow', () => {
     fireEvent.click(replayButton);
 
     await waitFor(() => {
-      expect(fetchQuestions).toHaveBeenNthCalledWith(2, 'harder', firstQuestions);
+      // 23/25 from the Easier default moves up one tier, to Normal.
+      expect(fetchQuestions).toHaveBeenNthCalledWith(2, 'normal', firstQuestions);
     });
   });
 
@@ -121,6 +122,19 @@ describe('App replay flow', () => {
 
     await waitFor(() => {
       expect(fetchQuestions).toHaveBeenCalledWith('much_harder', []);
+    });
+  });
+
+  it('starts on the Easier tier when the slider is untouched', async () => {
+    vi.mocked(fetchQuestions).mockResolvedValue(firstQuestions);
+
+    render(<App />);
+
+    expect(screen.getByRole('slider', { name: /starting difficulty/i })).toHaveProperty('value', '-1');
+    fireEvent.click(screen.getByRole('button', { name: /start new game/i }));
+
+    await waitFor(() => {
+      expect(fetchQuestions).toHaveBeenCalledWith('easier', []);
     });
   });
 });

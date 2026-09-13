@@ -95,13 +95,13 @@ describe('fetchQuestions', () => {
     );
   });
 
-  it("defaults to difficulty 'normal' when called with no argument", async () => {
+  it("defaults to difficulty 'easier' when called with no argument", async () => {
     const fetchMock = stubQuestionsFetch();
     await fetchQuestions();
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/questions',
       expect.objectContaining({
-        body: JSON.stringify({ difficulty: 'normal' }),
+        body: JSON.stringify({ difficulty: 'easier' }),
       }),
     );
   });

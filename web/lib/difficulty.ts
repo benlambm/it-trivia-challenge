@@ -3,6 +3,9 @@ export type Difficulty = 'much_easier' | 'easier' | 'normal' | 'harder' | 'much_
 export const TIER_MIN = -2;
 export const TIER_MAX = 2;
 
+// Students start one notch below Normal so the first quiz is approachable.
+export const DEFAULT_TIER = -1;
+
 export const TIER_TO_DIFFICULTY: Record<number, Difficulty> = {
   [-2]: 'much_easier',
   [-1]: 'easier',
@@ -10,6 +13,8 @@ export const TIER_TO_DIFFICULTY: Record<number, Difficulty> = {
   1: 'harder',
   2: 'much_harder',
 };
+
+export const DEFAULT_DIFFICULTY: Difficulty = TIER_TO_DIFFICULTY[DEFAULT_TIER];
 
 export const TIER_LABELS: Record<number, string> = {
   [-2]: 'Much Easier',

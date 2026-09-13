@@ -87,7 +87,7 @@ stateDiagram-v2
   RESULTS --> WELCOME: Play again
 ```
 
-**Start game:** Welcome optionally adjusts starting difficulty → `POST /api/questions` (plus previous quiz questions on replay) → add `id`, shuffle options → quiz (25 questions, 5 categories × 5 each).
+**Start game:** Welcome optionally adjusts starting difficulty (defaults to Easier, one notch below Normal) → `POST /api/questions` (plus previous quiz questions on replay) → add `id`, shuffle options → quiz (25 questions, 5 categories × 5 each).
 
 **Finish game:** Tally score → `POST /api/results` with `{ score, total }` → personalized title, evaluation, motivation.
 

@@ -1,5 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { difficultyLabel, nextTier, playAgainLabel, scoreDelta, TIER_TO_DIFFICULTY } from './difficulty';
+import {
+  DEFAULT_DIFFICULTY,
+  DEFAULT_TIER,
+  difficultyLabel,
+  nextTier,
+  playAgainLabel,
+  scoreDelta,
+  TIER_TO_DIFFICULTY,
+} from './difficulty';
+
+describe('default tier', () => {
+  it('starts one notch below Normal', () => {
+    expect(DEFAULT_TIER).toBe(-1);
+    expect(DEFAULT_DIFFICULTY).toBe('easier');
+    expect(difficultyLabel(DEFAULT_TIER)).toBe('Easier');
+  });
+});
 
 describe('scoreDelta', () => {
   it.each([

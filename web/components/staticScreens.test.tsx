@@ -39,8 +39,8 @@ describe('WelcomeScreen', () => {
 });
 
 describe('ResultsScreen', () => {
-  it('shows score feedback and calls play again', () => {
-    const onPlayAgain = vi.fn();
+  it('shows score feedback and offers every replay option it is given', () => {
+    const onReplay = vi.fn();
     render(
       <ResultsScreen
         result={{
@@ -50,16 +50,40 @@ describe('ResultsScreen', () => {
           evaluation: 'Keep learning.',
           motivation: 'Brightpoint can help.',
         }}
-        onPlayAgain={onPlayAgain}
-        playAgainLabel="Try Again"
+        replayOptions={[
+          { kind: 'easier', label: 'Try an Easier Quiz', tier: -1 },
+          { kind: 'same', label: 'Play Again', tier: 0 },
+          { kind: 'harder', label: 'Try a Harder Quiz', tier: 1 },
+        ]}
+        onReplay={onReplay}
       />,
     );
 
     expect(screen.getByText('20%')).toBeInTheDocument();
     expect(screen.getByText('5 / 25 Correct')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /try again/i }));
+    expect(screen.getAllByRole('button')).toHaveLength(3);
 
-    expect(onPlayAgain).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: /try an easier quiz/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^play again/i }));
+    fireEvent.click(screen.getByRole('button', { name: /try a harder quiz/i }));
+
+    expect(onReplay.mock.calls).toEqual([[-1], [0], [1]]);
+  });
+
+  it('renders only the options it is given at the end of the scale', () => {
+    render(
+      <ResultsScreen
+        result={{ score: 25, totalQuestions: 25, title: 'Ace', evaluation: 'Wow.', motivation: 'Go.' }}
+        replayOptions={[
+          { kind: 'easier', label: 'Try an Easier Quiz', tier: 1 },
+          { kind: 'same', label: 'Play Again', tier: 2 },
+        ]}
+        onReplay={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByRole('button')).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: /try a harder quiz/i })).toBeNull();
   });
 });
 

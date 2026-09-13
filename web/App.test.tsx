@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { fetchGameResults, fetchQuestions } from './services/triviaApi';
+import type { ReplayOption } from './lib/difficulty';
 import type { GameResult, Question } from './types';
 
 vi.mock('./services/triviaApi', () => ({
@@ -48,8 +49,14 @@ vi.mock('./components/QuizScreen', () => ({
 }));
 
 vi.mock('./components/ResultsScreen', () => ({
-  default: ({ onPlayAgain, playAgainLabel }: { onPlayAgain: () => void; playAgainLabel: string }) => (
-    <button onClick={onPlayAgain}>{playAgainLabel}</button>
+  default: ({ replayOptions, onReplay }: { replayOptions: ReplayOption[]; onReplay: (tier: number) => void }) => (
+    <div>
+      {replayOptions.map((option) => (
+        <button key={option.kind} onClick={() => onReplay(option.tier)}>
+          {option.label}
+        </button>
+      ))}
+    </div>
   ),
 }));
 
@@ -91,23 +98,73 @@ describe('App replay flow', () => {
     vi.mocked(fetchGameResults).mockReset();
   });
 
-  it('passes the previous quiz into the next replay request one tier up', async () => {
+  async function playThroughFirstQuiz() {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /start new game/i }));
+    expect(await screen.findByTestId('quiz-question-count')).toHaveTextContent('1');
+    fireEvent.click(screen.getByRole('button', { name: /finish quiz/i }));
+    await screen.findByRole('button', { name: /^play again$/i });
+  }
+
+  it('offers easier, same and harder replays after a quiz', async () => {
+    vi.mocked(fetchQuestions).mockResolvedValue(firstQuestions);
+    vi.mocked(fetchGameResults).mockResolvedValue(result);
+
+    await playThroughFirstQuiz();
+
+    expect(screen.getByRole('button', { name: /try an easier quiz/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^play again$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /try a harder quiz/i })).toBeInTheDocument();
+  });
+
+  // Starting tier is Easier (-1), so the three replays map to much_easier / easier / normal.
+  it.each([
+    ['Try an Easier Quiz', 'much_easier'],
+    ['Play Again', 'easier'],
+    ['Try a Harder Quiz', 'normal'],
+  ])('"%s" requests %s with the previous quiz attached', async (label, difficulty) => {
     vi.mocked(fetchQuestions).mockResolvedValueOnce(firstQuestions).mockResolvedValueOnce(secondQuestions);
     vi.mocked(fetchGameResults).mockResolvedValue(result);
 
-    render(<App />);
-
-    fireEvent.click(screen.getByRole('button', { name: /start new game/i }));
-    expect(await screen.findByTestId('quiz-question-count')).toHaveTextContent('1');
-
-    fireEvent.click(screen.getByRole('button', { name: /finish quiz/i }));
-    const replayButton = await screen.findByRole('button', { name: /try a harder quiz/i });
-    fireEvent.click(replayButton);
+    await playThroughFirstQuiz();
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${label}$`, 'i') }));
 
     await waitFor(() => {
-      // 23/25 from the Easier default moves up one tier, to Normal.
-      expect(fetchQuestions).toHaveBeenNthCalledWith(2, 'normal', firstQuestions);
+      expect(fetchQuestions).toHaveBeenNthCalledWith(2, difficulty, firstQuestions);
     });
+  });
+
+  it('keeps the chosen tier for the following replay', async () => {
+    vi.mocked(fetchQuestions).mockResolvedValue(firstQuestions);
+    vi.mocked(fetchGameResults).mockResolvedValue(result);
+
+    await playThroughFirstQuiz();
+    fireEvent.click(screen.getByRole('button', { name: /try a harder quiz/i })); // easier -> normal
+    expect(await screen.findByTestId('quiz-question-count')).toHaveTextContent('1');
+    fireEvent.click(screen.getByRole('button', { name: /finish quiz/i }));
+    await screen.findByRole('button', { name: /^play again$/i });
+    fireEvent.click(screen.getByRole('button', { name: /try a harder quiz/i })); // normal -> harder
+
+    await waitFor(() => {
+      expect(fetchQuestions).toHaveBeenNthCalledWith(3, 'harder', firstQuestions);
+    });
+  });
+
+  it('hides the easier option when already at Much Easier', async () => {
+    vi.mocked(fetchQuestions).mockResolvedValue(firstQuestions);
+    vi.mocked(fetchGameResults).mockResolvedValue(result);
+
+    render(<App />);
+    fireEvent.change(screen.getByRole('slider', { name: /starting difficulty/i }), {
+      target: { value: '-2' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /start new game/i }));
+    expect(await screen.findByTestId('quiz-question-count')).toHaveTextContent('1');
+    fireEvent.click(screen.getByRole('button', { name: /finish quiz/i }));
+    await screen.findByRole('button', { name: /^play again$/i });
+
+    expect(screen.queryByRole('button', { name: /try an easier quiz/i })).toBeNull();
+    expect(screen.getByRole('button', { name: /try a harder quiz/i })).toBeInTheDocument();
   });
 
   it('uses the selected starting difficulty on first play', async () => {

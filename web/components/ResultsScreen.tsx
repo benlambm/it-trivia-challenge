@@ -1,13 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import { GameResult } from '../types';
+import { difficultyLabel, ReplayOption } from '../lib/difficulty';
 
 interface ResultsScreenProps {
   result: GameResult;
-  onPlayAgain: () => void;
-  playAgainLabel: string;
+  replayOptions: ReplayOption[];
+  onReplay: (tier: number) => void;
 }
 
-const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, onPlayAgain, playAgainLabel }) => {
+const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, replayOptions, onReplay }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Confetti effect
@@ -98,13 +99,26 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ result, onPlayAgain, play
               </div>
             </div>
 
-            {/* Actions */}
-            <button
-              onClick={onPlayAgain}
-              className="w-full py-6 bg-[#173A45] text-white rounded-2xl font-black text-2xl hover:bg-[#E87722] transition-colors border-4 border-[#173A45] hover:shadow-[4px_4px_0px_0px_#173A45]"
-            >
-              {playAgainLabel}
-            </button>
+            {/* Actions: easier / same / harder, in that order; ends of the scale drop out */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              {replayOptions.map((option) => {
+                const primary = option.kind === 'same';
+                return (
+                  <button
+                    key={option.kind}
+                    onClick={() => onReplay(option.tier)}
+                    className={`flex-1 py-5 px-4 rounded-2xl font-black text-xl border-4 border-[#173A45] transition-colors hover:shadow-[4px_4px_0px_0px_#173A45] ${
+                      primary ? 'bg-[#173A45] text-white hover:bg-[#E87722]' : 'bg-white text-[#173A45] hover:bg-orange-50'
+                    }`}
+                  >
+                    {option.label}
+                    <span className="block mt-1 text-xs font-bold uppercase tracking-wider opacity-70">
+                      {difficultyLabel(option.tier)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

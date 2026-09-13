@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { GameState, Question, GameResult } from './types';
 import { fetchQuestions, fetchGameResults } from './services/triviaApi';
-import { DEFAULT_TIER, Difficulty, TIER_TO_DIFFICULTY, nextTier, playAgainLabel } from './lib/difficulty';
+import { DEFAULT_TIER, Difficulty, TIER_TO_DIFFICULTY, replayOptions } from './lib/difficulty';
 import WelcomeScreen from './components/WelcomeScreen';
 import LoadingScreen from './components/LoadingScreen';
 import QuizScreen from './components/QuizScreen';
@@ -15,7 +15,6 @@ const App: React.FC = () => {
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [difficultyTier, setDifficultyTier] = useState(DEFAULT_TIER);
-  const [pendingLabel, setPendingLabel] = useState('Play Again');
 
   const startNewGame = useCallback(async (difficulty: Difficulty, previousQuestions: Question[] = []) => {
     setError(null);
@@ -41,9 +40,6 @@ const App: React.FC = () => {
   }, []);
 
   const handleGameFinish = useCallback(async (finalScore: number) => {
-    const { tier, delta } = nextTier(difficultyTier, finalScore);
-    setDifficultyTier(tier);
-    setPendingLabel(playAgainLabel(delta));
     setGameState(GameState.LOADING_RESULTS);
     try {
       const result = await fetchGameResults(finalScore, questions.length);
@@ -63,7 +59,7 @@ const App: React.FC = () => {
       });
       setGameState(GameState.RESULTS);
     }
-  }, [questions.length, difficultyTier]);
+  }, [questions.length]);
 
   return (
     <div className="font-sans antialiased text-slate-900 relative">
@@ -100,8 +96,11 @@ const App: React.FC = () => {
       {gameState === GameState.RESULTS && gameResult && (
         <ResultsScreen
           result={gameResult}
-          onPlayAgain={() => startNewGame(TIER_TO_DIFFICULTY[difficultyTier], questions)}
-          playAgainLabel={pendingLabel}
+          replayOptions={replayOptions(difficultyTier)}
+          onReplay={(tier) => {
+            setDifficultyTier(tier);
+            startNewGame(TIER_TO_DIFFICULTY[tier], questions);
+          }}
         />
       )}
 

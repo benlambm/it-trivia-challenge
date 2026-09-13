@@ -3,9 +3,9 @@ import {
   DEFAULT_DIFFICULTY,
   DEFAULT_TIER,
   difficultyLabel,
-  nextTier,
-  playAgainLabel,
-  scoreDelta,
+  replayOptions,
+  TIER_MAX,
+  TIER_MIN,
   TIER_TO_DIFFICULTY,
 } from './difficulty';
 
@@ -17,55 +17,30 @@ describe('default tier', () => {
   });
 });
 
-describe('scoreDelta', () => {
-  it.each([
-    [0, -2],
-    [9, -2],
-    [10, -1],
-    [14, -1],
-    [15, 0],
-    [20, 0],
-    [21, 1],
-    [25, 1],
-  ])('score %i → delta %i', (score, expected) => {
-    expect(scoreDelta(score)).toBe(expected);
-  });
-});
-
-describe('nextTier', () => {
-  it('moves up from 0 on a >20 score', () => {
-    expect(nextTier(0, 23)).toEqual({ tier: 1, delta: 1 });
+describe('replayOptions', () => {
+  it('offers easier, same and harder from a middle tier, in that order', () => {
+    expect(replayOptions(0)).toEqual([
+      { kind: 'easier', label: 'Try an Easier Quiz', tier: -1 },
+      { kind: 'same', label: 'Play Again', tier: 0 },
+      { kind: 'harder', label: 'Try a Harder Quiz', tier: 1 },
+    ]);
   });
 
-  it('clamps at +2 when already at +2 and scoring >20', () => {
-    expect(nextTier(2, 25)).toEqual({ tier: 2, delta: 0 });
+  it('drops the easier option at Much Easier', () => {
+    expect(replayOptions(TIER_MIN).map((o) => o.kind)).toEqual(['same', 'harder']);
   });
 
-  it('clamps at -2 when already at -2 and scoring <10', () => {
-    expect(nextTier(-2, 3)).toEqual({ tier: -2, delta: 0 });
+  it('drops the harder option at Much Harder', () => {
+    expect(replayOptions(TIER_MAX).map((o) => o.kind)).toEqual(['easier', 'same']);
   });
 
-  it('drops two tiers from 0 on a <10 score', () => {
-    expect(nextTier(0, 5)).toEqual({ tier: -2, delta: -2 });
-  });
-
-  it('partial clamp on -2 step from tier -1', () => {
-    expect(nextTier(-1, 4)).toEqual({ tier: -2, delta: -1 });
-  });
-
-  it('mid-score keeps the tier where it is', () => {
-    expect(nextTier(1, 17)).toEqual({ tier: 1, delta: 0 });
-  });
-});
-
-describe('playAgainLabel', () => {
-  it.each([
-    [1, 'Try a Harder Quiz'],
-    [0, 'Play Again'],
-    [-1, 'Try an Easier Quiz'],
-    [-2, 'Try a Much Easier Quiz'],
-  ])('delta %i → "%s"', (delta, expected) => {
-    expect(playAgainLabel(delta)).toBe(expected);
+  it('keeps Play Again on the current tier and steps exactly one tier each way', () => {
+    for (let tier = TIER_MIN; tier <= TIER_MAX; tier++) {
+      const byKind = Object.fromEntries(replayOptions(tier).map((o) => [o.kind, o.tier]));
+      expect(byKind.same).toBe(tier);
+      if (tier > TIER_MIN) expect(byKind.easier).toBe(tier - 1);
+      if (tier < TIER_MAX) expect(byKind.harder).toBe(tier + 1);
+    }
   });
 });
 

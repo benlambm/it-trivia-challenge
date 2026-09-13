@@ -28,22 +28,24 @@ export function difficultyLabel(tier: number): string {
   return TIER_LABELS[tier] ?? TIER_LABELS[0];
 }
 
-export function scoreDelta(score: number): number {
-  if (score > 20) return 1;
-  if (score >= 15) return 0;
-  if (score >= 10) return -1;
-  return -2;
+export type ReplayKind = 'easier' | 'same' | 'harder';
+
+export interface ReplayOption {
+  kind: ReplayKind;
+  label: string;
+  tier: number;
 }
 
-export function nextTier(currentTier: number, score: number): { tier: number; delta: number } {
-  const raw = currentTier + scoreDelta(score);
-  const tier = Math.max(TIER_MIN, Math.min(TIER_MAX, raw));
-  return { tier, delta: tier - currentTier };
-}
-
-export function playAgainLabel(effectiveDelta: number): string {
-  if (effectiveDelta >= 1) return 'Try a Harder Quiz';
-  if (effectiveDelta === -1) return 'Try an Easier Quiz';
-  if (effectiveDelta <= -2) return 'Try a Much Easier Quiz';
-  return 'Play Again';
+// Replay choices offered after a quiz: one step easier, the same tier, and one
+// step harder. A step past either end of the scale is omitted, not clamped.
+export function replayOptions(currentTier: number): ReplayOption[] {
+  const options: ReplayOption[] = [];
+  if (currentTier > TIER_MIN) {
+    options.push({ kind: 'easier', label: 'Try an Easier Quiz', tier: currentTier - 1 });
+  }
+  options.push({ kind: 'same', label: 'Play Again', tier: currentTier });
+  if (currentTier < TIER_MAX) {
+    options.push({ kind: 'harder', label: 'Try a Harder Quiz', tier: currentTier + 1 });
+  }
+  return options;
 }

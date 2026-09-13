@@ -84,12 +84,14 @@ stateDiagram-v2
   PLAYING --> LOADING_RESULTS: Quiz complete
   LOADING_RESULTS --> RESULTS: Results ready
   LOADING_RESULTS --> RESULTS: Fallback on error
-  RESULTS --> WELCOME: Play again
+  RESULTS --> LOADING_QUESTIONS: Easier / Play again / Harder
 ```
 
 **Start game:** Welcome optionally adjusts starting difficulty (defaults to Easier, one notch below Normal) → `POST /api/questions` (plus previous quiz questions on replay) → add `id`, shuffle options → quiz (25 questions, 5 categories × 5 each).
 
 **Finish game:** Tally score → `POST /api/results` with `{ score, total }` → personalized title, evaluation, motivation.
+
+**Replay:** Results offers up to three buttons: Try an Easier Quiz (one tier down), Play Again (same tier), Try a Harder Quiz (one tier up). The step past either end of the scale is omitted, so Much Easier shows no easier button and Much Harder shows no harder button. The chosen tier becomes the current tier and the previous 25 questions are sent along so the next set avoids repeats.
 
 ## API contract
 

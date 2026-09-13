@@ -2,7 +2,9 @@ import 'dotenv/config';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { genkit, z } from 'genkit';
-import { googleAI } from '@genkit-ai/googleai';
+// @genkit-ai/googleai is deprecated upstream; google-genai is its successor. It reads the
+// same GOOGLE_GENAI_API_KEY (also GEMINI_API_KEY / GOOGLE_API_KEY) and keeps the 'googleai/' model prefix.
+import { googleAI } from '@genkit-ai/google-genai';
 import { buildQuestionsPrompt, QuestionsInputSchema, QuestionsOutputSchema } from './triviaQuestions.js';
 
 // Model is env-overridable (TRIVIA_MODEL in .env) so it can be changed with a

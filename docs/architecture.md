@@ -114,7 +114,7 @@ Single entry point: **`api/index.js`** — Express routes plus two Genkit flows 
 
 | Concern | Detail |
 |---------|--------|
-| Model | `googleai/gemini-flash-latest` (`MODEL` in `api/index.js`) |
+| Model | `googleai/gemini-3.7-flash` by default; override with `TRIVIA_MODEL` in `api/.env` (plugin: `@genkit-ai/google-genai`) |
 | Rate limit | 10 requests/minute on `/api/questions` and `/api/results` |
 | CORS (prod) | Origin restricted to `https://trivia.benlamb.net` |
 | Secrets | `GOOGLE_GENAI_API_KEY` in `api/.env` only — use `api/.env.example` as template |

@@ -48,6 +48,24 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
 .spin-btn:disabled{background:var(--slate-400);box-shadow:none}
 .foot{margin:auto 0 0;padding-top:14px;font-size:.8rem;font-weight:700;color:var(--slate-400);text-align:center}
 
+/* ---------- ready ---------- */
+.ready{justify-content:center;background:var(--area-color,var(--navy));color:#fff;text-align:center}
+.ready-card{width:100%;max-width:720px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.ready-eyebrow{margin:0;font-size:clamp(1rem,3vw,1.3rem);font-weight:800;letter-spacing:.3em;text-transform:uppercase;opacity:.85}
+.ready-title{display:flex;flex-direction:column;align-items:center;gap:6px}
+.ready-emoji{font-size:clamp(2.6rem,9vw,4.2rem);line-height:1}
+.ready-title h2{margin:0;font-size:clamp(2rem,7vw,3.6rem);font-weight:900;line-height:1.05;letter-spacing:-.02em;text-shadow:3px 3px 0 rgba(23,58,69,.35)}
+.ready-title h2:focus{outline:none}
+.ready-tagline{margin:0;padding:14px 22px;background:rgba(255,255,255,.14);border:3px solid rgba(255,255,255,.35);border-radius:18px;font-size:clamp(1.1rem,3.2vw,1.5rem);font-weight:700;font-style:italic;transform:rotate(-1deg)}
+.ready-ring{position:relative;width:clamp(130px,30vw,180px);aspect-ratio:1;margin:10px 0 4px}
+.ready-ring svg{display:block;width:100%;height:100%;transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:rgba(255,255,255,.25);stroke-width:10}
+.ring-fill{fill:none;stroke:#fff;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .1s linear}
+.ready-num{position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(3.4rem,12vw,5.5rem);font-weight:900;line-height:1;text-shadow:3px 3px 0 rgba(23,58,69,.35)}
+.ready-num.pop{animation:pop .5s ease-out}
+@keyframes pop{0%{transform:scale(1.45);opacity:.35}100%{transform:scale(1);opacity:1}}
+.ready-sub{margin:0;font-size:.9rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+
 /* ---------- quiz ---------- */
 .quiz{gap:18px}
 .area-bar{width:100%;max-width:900px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 18px;background:var(--area-color,var(--navy));color:#fff;border:4px solid var(--navy);border-radius:18px;box-shadow:6px 6px 0 rgba(23,58,69,.2)}
@@ -110,6 +128,7 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
 @media(prefers-reduced-motion:reduce){
   .option,.btn,.spin-btn,.wheel .wedge path{transition:none}
   .btn:hover,.option:not(:disabled):hover,.spin-btn:not(:disabled):hover{transform:none}
+  .ready-num.pop{animation:none}.ring-fill{transition:none}
 }
 </style>
 </head>
@@ -127,6 +146,19 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
       <div class="hub"><button id="spin" type="button" class="spin-btn" aria-label="Spin the wheel">SPIN</button></div>
     </div>
     <p class="foot" id="foot">Brightpoint Community College &middot; IT Trivia Challenge &middot; offline edition</p>
+  </section>
+
+  <section id="screen-ready" class="screen ready" hidden>
+    <div class="ready-card">
+      <p class="ready-eyebrow">Get ready</p>
+      <div class="ready-title"><span class="ready-emoji" id="ready-emoji" aria-hidden="true"></span><h2 id="ready-area" tabindex="-1"></h2></div>
+      <p class="ready-tagline" id="ready-tagline"></p>
+      <div class="ready-ring">
+        <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="52"></circle><circle class="ring-fill" id="ready-ring" cx="60" cy="60" r="52"></circle></svg>
+        <div class="ready-num" id="ready-num" role="timer" aria-label="Seconds until the first question">5</div>
+      </div>
+      <p class="ready-sub">First question coming up&hellip;</p>
+    </div>
   </section>
 
   <section id="screen-quiz" class="screen quiz" hidden>
@@ -181,14 +213,14 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
 [
   {"id":"easier-001","difficulty":"easier","model":"googleai/gemini-3.7-flash","generatedAt":"2026-09-17T13:36:43.010Z","source":"https://trivia.benlamb.net/api/questions","questions":[
     {"category":"Networking \u0026 Internet","text":"What device is primarily used to connect a home network to the internet?","options":["Router","Monitor","Flash drive","Power supply"],"correctAnswer":"Router"},
-    {"category":"Networking \u0026 Internet","text":"What does a web browser address bar display to indicate a secure connection?","options":["A padlock icon","A red exclamation mark","A paperclip icon","A blinking cursor"],"correctAnswer":"A padlock icon"},
+    {"category":"Networking \u0026 Internet","text":"Which system translates a website name such as example.com into the numeric address computers use to find it?","options":["DNS (Domain Name System)","VPN (Virtual Private Network)","URL (Uniform Resource Locator)","ISP (Internet Service Provider)"],"correctAnswer":"DNS (Domain Name System)"},
     {"category":"Networking \u0026 Internet","text":"What is the unique numerical label assigned to each device connected to a computer network?","options":["IP address","ZIP code","Serial key","Bar code"],"correctAnswer":"IP address"},
     {"category":"Networking \u0026 Internet","text":"Which technology allows devices to connect to a local network without physical cables?","options":["Wi-Fi","Ethernet","HDMI","VGA"],"correctAnswer":"Wi-Fi"},
     {"category":"Networking \u0026 Internet","text":"What is the term for sending a file from your device to a remote server?","options":["Downloading","Uploading","Streaming","Browsing"],"correctAnswer":"Uploading"},
-    {"category":"Artificial Intelligence","text":"What is the term for computer systems performing tasks that normally require human intelligence?","options":["Artificial Intelligence","Cloud Storage","Operating System","Virtual Memory"],"correctAnswer":"Artificial Intelligence"},
-    {"category":"Artificial Intelligence","text":"What is an AI program designed to simulate conversation with human users called?","options":["Chatbot","Web browser","Spreadsheet","Antivirus"],"correctAnswer":"Chatbot"},
+    {"category":"Artificial Intelligence","text":"When an AI chatbot confidently states something that is false or made up, what is that mistake called?","options":["Hallucination","Syntax error","Cache miss","Overclocking"],"correctAnswer":"Hallucination"},
+    {"category":"Artificial Intelligence","text":"Deep learning is a kind of machine learning built from many stacked layers of which brain-inspired structure?","options":["Neural networks","Decision trees","Logic gates","Hash tables"],"correctAnswer":"Neural networks"},
     {"category":"Artificial Intelligence","text":"Which branch of AI focuses on teaching computers to learn from data without being explicitly programmed?","options":["Machine Learning","Web Hosting","Data Compression","Hardware Design"],"correctAnswer":"Machine Learning"},
-    {"category":"Artificial Intelligence","text":"Which AI feature allows a smartphone to unlock by scanning a user's face?","options":["Facial recognition","GPS tracking","Voice dialing","Autocorrect"],"correctAnswer":"Facial recognition"},
+    {"category":"Artificial Intelligence","text":"Which branch of AI lets a phone unlock by recognizing your face and lets a self-driving car spot pedestrians?","options":["Computer vision","Natural language processing","Speech recognition","Data mining"],"correctAnswer":"Computer vision"},
     {"category":"Artificial Intelligence","text":"What type of AI can create brand new content like essays, images, and music?","options":["Generative AI","Static AI","Storage AI","Network AI"],"correctAnswer":"Generative AI"},
     {"category":"Program and Database Development","text":"What is an error or mistake in computer code called?","options":["Bug","Patch","Pixel","Script"],"correctAnswer":"Bug"},
     {"category":"Program and Database Development","text":"What is a structured collection of related data stored electronically called?","options":["Database","Compiler","Firewall","Motherboard"],"correctAnswer":"Database"},
@@ -228,6 +260,7 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
     spinMs: 4200,        // wheel animation
     spinReducedMs: 600,  // with prefers-reduced-motion
     settleMs: 500,       // pause after the wheel stops before the quiz starts
+    readyMs: 5000,       // "Get ready" countdown before the first question (0 skips the screen)
     revealMs: 1500,      // show correct/wrong before advancing
     resultsIdleMs: 30000,// results screen auto-returns to the wheel
     quizIdleMs: 90000    // an abandoned quiz returns to the wheel
@@ -332,11 +365,12 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
     spinning: false,
     decks: {},
     quiz: null,
-    timers: { idle: null, reveal: null, spin: null, countdown: null, confettiStop: null, confettiRaf: null }
+    timers: { idle: null, ready: null, reveal: null, spin: null, countdown: null, confettiStop: null, confettiRaf: null }
   };
   function $(id) { return document.getElementById(id); }
   var el = {
-    screens: { launch: $('screen-launch'), quiz: $('screen-quiz'), results: $('screen-results') },
+    screens: { launch: $('screen-launch'), ready: $('screen-ready'), quiz: $('screen-quiz'), results: $('screen-results') },
+    readyEmoji: $('ready-emoji'), readyArea: $('ready-area'), readyTagline: $('ready-tagline'), readyRing: $('ready-ring'), readyNum: $('ready-num'),
     brand: $('brand'), hint: $('hint'), wheel: $('wheel'), spin: $('spin'), foot: $('foot'),
     areaBar: $('area-bar'), quizEmoji: $('quiz-emoji'), quizArea: $('quiz-area'), progress: $('quiz-progress'), score: $('quiz-score'),
     qLabel: $('q-label'), qText: $('q-text'), options: $('options'), quit: $('quit'),
@@ -435,6 +469,41 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
       return;
     }
     state.quiz = { areaIndex: areaIndex, questions: result.dealt.map(function (q) { return prepareQuestion(q); }), index: 0, score: 0, answered: false };
+    if (TIMING.readyMs > 0) showReady(area); else startQuiz();
+  }
+
+  // ---------- get ready ----------
+  var RING_C = 2 * Math.PI * 52; // circumference of the ring circle (r=52 in the SVG)
+  function showReady(area) {
+    el.screens.ready.style.setProperty('--area-color', area.color);
+    el.readyEmoji.textContent = area.emoji;
+    el.readyArea.textContent = area.name;
+    el.readyTagline.textContent = area.tagline;
+    el.readyRing.setAttribute('stroke-dasharray', String(RING_C));
+    el.readyRing.setAttribute('stroke-dashoffset', '0');
+    showScreen('ready');
+    var total = TIMING.readyMs;
+    var end = Date.now() + total;
+    var shown = null;
+    function tick() {
+      var leftMs = Math.max(0, end - Date.now());
+      var left = Math.max(1, Math.ceil(leftMs / 1000));
+      if (left !== shown) { shown = left; setReadyNumber(left); }
+      el.readyRing.setAttribute('stroke-dashoffset', String(RING_C * (1 - leftMs / total)));
+      if (leftMs <= 0) { state.timers.ready = null; startQuiz(); return; }
+      state.timers.ready = setTimeout(tick, 100);
+    }
+    tick();
+  }
+  function setReadyNumber(n) {
+    el.readyNum.textContent = String(n);
+    el.readyNum.classList.remove('pop');
+    void el.readyNum.offsetWidth; // restart the pop animation
+    el.readyNum.classList.add('pop');
+  }
+  // Starts the dealt quiz when the countdown ends (or at once when readyMs is 0). Nothing cuts the countdown short.
+  function startQuiz() {
+    if (!state.quiz || (state.screen !== 'ready' && state.screen !== 'launch')) return;
     showScreen('quiz');
     renderQuestion();
   }
@@ -591,7 +660,7 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
 
   // ---------- screens, timers, keyboard ----------
   function clearTimers() {
-    ['idle', 'reveal', 'spin', 'countdown'].forEach(function (key) {
+    ['idle', 'ready', 'reveal', 'spin', 'countdown'].forEach(function (key) {
       if (state.timers[key]) clearTimeout(state.timers[key]);
       state.timers[key] = null;
     });
@@ -610,7 +679,7 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
       forceReflow();
       setHint(DEFAULT_HINT);
     }
-    var focusTarget = { launch: el.brand, quiz: el.quizArea, results: el.bandTitle }[name];
+    var focusTarget = { launch: el.brand, ready: el.readyArea, quiz: el.quizArea, results: el.bandTitle }[name];
     if (focusTarget && focusTarget.focus) {
       try { focusTarget.focus({ preventScroll: true }); } catch (e) { focusTarget.focus(); }
     }
@@ -655,7 +724,7 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
     select: { shuffle: shuffle, buildPools: buildPools, newDeck: newDeck, deal: deal, prepareQuestion: prepareQuestion, isCorrect: isCorrect },
     scoreBand: scoreBand, percent: percent,
     state: state, pools: pools,
-    actions: { spin: spin, startArea: startArea, answer: answer, showScreen: showScreen }
+    actions: { spin: spin, startArea: startArea, startQuiz: startQuiz, answer: answer, showScreen: showScreen }
   };
 })();
 </script>

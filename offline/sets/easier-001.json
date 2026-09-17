@@ -18,14 +18,14 @@
     },
     {
       "category": "Networking & Internet",
-      "text": "What does a web browser address bar display to indicate a secure connection?",
+      "text": "Which system translates a website name such as example.com into the numeric address computers use to find it?",
       "options": [
-        "A padlock icon",
-        "A red exclamation mark",
-        "A paperclip icon",
-        "A blinking cursor"
+        "DNS (Domain Name System)",
+        "VPN (Virtual Private Network)",
+        "URL (Uniform Resource Locator)",
+        "ISP (Internet Service Provider)"
       ],
-      "correctAnswer": "A padlock icon"
+      "correctAnswer": "DNS (Domain Name System)"
     },
     {
       "category": "Networking & Internet",
@@ -62,25 +62,25 @@
     },
     {
       "category": "Artificial Intelligence",
-      "text": "What is the term for computer systems performing tasks that normally require human intelligence?",
+      "text": "When an AI chatbot confidently states something that is false or made up, what is that mistake called?",
       "options": [
-        "Artificial Intelligence",
-        "Cloud Storage",
-        "Operating System",
-        "Virtual Memory"
+        "Hallucination",
+        "Syntax error",
+        "Cache miss",
+        "Overclocking"
       ],
-      "correctAnswer": "Artificial Intelligence"
+      "correctAnswer": "Hallucination"
     },
     {
       "category": "Artificial Intelligence",
-      "text": "What is an AI program designed to simulate conversation with human users called?",
+      "text": "Deep learning is a kind of machine learning built from many stacked layers of which brain-inspired structure?",
       "options": [
-        "Chatbot",
-        "Web browser",
-        "Spreadsheet",
-        "Antivirus"
+        "Neural networks",
+        "Decision trees",
+        "Logic gates",
+        "Hash tables"
       ],
-      "correctAnswer": "Chatbot"
+      "correctAnswer": "Neural networks"
     },
     {
       "category": "Artificial Intelligence",
@@ -95,14 +95,14 @@
     },
     {
       "category": "Artificial Intelligence",
-      "text": "Which AI feature allows a smartphone to unlock by scanning a user's face?",
+      "text": "Which branch of AI lets a phone unlock by recognizing your face and lets a self-driving car spot pedestrians?",
       "options": [
-        "Facial recognition",
-        "GPS tracking",
-        "Voice dialing",
-        "Autocorrect"
+        "Computer vision",
+        "Natural language processing",
+        "Speech recognition",
+        "Data mining"
       ],
-      "correctAnswer": "Facial recognition"
+      "correctAnswer": "Computer vision"
     },
     {
       "category": "Artificial Intelligence",

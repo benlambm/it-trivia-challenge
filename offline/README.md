@@ -8,7 +8,8 @@ from a spin wheel.
 
 1. Copy `index.html` anywhere (USB stick, laptop desktop, shared drive).
 2. Double-click it. It opens in the default browser from a `file://` URL and works fully offline.
-3. **SPIN** picks an area at random and starts its quiz. Tapping a slice starts that area directly.
+3. **SPIN** picks an area at random; tapping a slice picks that area directly. A 5-second **Get ready** screen
+   then shows the area and counts down before the first question.
 4. After 5 questions the score screen shows; **Spin again** (or 30 s of idling) returns to the wheel.
 
 Keyboard: `1`–`4` answer, `S` spins, `Esc` goes back to the wheel. Works with a touch screen, mouse or keyboard.
@@ -59,6 +60,7 @@ Everything adjustable is at the top of the inline script in `index.html`:
 |---|---|---|
 | `TIMING.spinMs` | 4200 | wheel animation length |
 | `TIMING.settleMs` | 500 | pause after the wheel stops before the quiz opens |
+| `TIMING.readyMs` | 5000 | "Get ready" countdown before the first question; `0` skips the screen |
 | `TIMING.revealMs` | 1500 | how long the green/red answer reveal stays before the next question |
 | `TIMING.resultsIdleMs` | 30000 | score screen auto-returns to the wheel |
 | `TIMING.quizIdleMs` | 90000 | an abandoned quiz returns to the wheel |
@@ -73,7 +75,7 @@ node --test 'offline/test/*.test.mjs'
 
 The tests import happy-dom from `web/node_modules`, so run `npm ci` in `web/` first. They cover the
 bank validator, the wheel geometry (1000 seeded spins must land on the chosen slice), question
-dealing, a full play-through, keyboard handling, and a static guard that the file has no external
+dealing, a full play-through, the Get Ready countdown, keyboard handling, and a static guard that the file has no external
 URLs, `fetch`, or ES modules. Use the explicit glob: `node --test offline/` would execute every file
 in the directory as a script.
 

@@ -26,6 +26,7 @@ test('tapping a wedge plays a full 5-question quiz to a perfect score, then retu
   const ctx = await loadPage();
   try {
     const { document, TRIVIA, click } = ctx;
+    TRIVIA.TIMING.readyMs = 0; // the Get Ready countdown has its own tests
     TRIVIA.TIMING.revealMs = 0;
     click(document.querySelector('#wheel .wedge[data-area-index="2"]'));
     assert.ok(visible(document, 'screen-quiz'));
@@ -74,6 +75,7 @@ test('a wrong answer is marked red, the right one green, and the score stays put
   const ctx = await loadPage();
   try {
     const { document, TRIVIA, click } = ctx;
+    TRIVIA.TIMING.readyMs = 0;
     click(document.querySelector('#wheel .wedge[data-area-index="3"]'));
     const q = TRIVIA.state.quiz.questions[0];
     const buttons = options(document);
@@ -97,6 +99,7 @@ test('keyboard: 1-4 answers, Escape leaves the quiz, Enter on a wedge starts it'
   const ctx = await loadPage();
   try {
     const { document, window, TRIVIA, key } = ctx;
+    TRIVIA.TIMING.readyMs = 0;
     const wedge = document.querySelector('#wheel .wedge[data-area-index="0"]');
     wedge.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     assert.ok(visible(document, 'screen-quiz'));
@@ -119,6 +122,7 @@ test('SPIN lands on a wedge and starts that area; the second tap during a spin i
     const { document, TRIVIA, click } = ctx;
     TRIVIA.TIMING.spinMs = 0;
     TRIVIA.TIMING.settleMs = 0;
+    TRIVIA.TIMING.readyMs = 0;
     const spin = document.getElementById('spin');
     click(spin);
     assert.ok(TRIVIA.state.spinning);
@@ -144,6 +148,7 @@ test('playing the same area twice reuses the whole 5-question pool', async () =>
   const ctx = await loadPage();
   try {
     const { document, TRIVIA, click, key } = ctx;
+    TRIVIA.TIMING.readyMs = 0;
     click(document.querySelector('#wheel .wedge[data-area-index="4"]'));
     const first = plain(TRIVIA.state.quiz.questions.map((q) => q.text)).sort();
     key('Escape');

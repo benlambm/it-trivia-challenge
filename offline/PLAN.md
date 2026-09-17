@@ -18,8 +18,8 @@ trivia.benlamb.net generates 25 questions per game with Gemini and needs a serve
 
 - **Location:** new top-level `offline/` in the dev clone `/home/dev/it-trivia-challenge`. CI and `deploy.yml` only touch `web/` and `api/`, so `offline/` is inert in production. Subdirectory names avoid `assets/`, `dist/`, `build/` (gitignored at any depth). Commit/push only if Ben asks.
 - **One question set now** (25 questions = 5 per area). Tooling accepts N sets; adding one later is two commands.
-- **Tap a wedge = start immediately** (no spin, no intro countdown). **SPIN** picks the winner uniformly first, animates the wheel to it, then starts that quiz.
-- **Dropped** from the old flow: difficulty slider, 5-second sector intro, loading screens, `/api/results` AI feedback (replaced by score-band static copy), the footer link wall (one-line footer stays).
+- **Tap a wedge = pick that area** (no spin). **SPIN** picks the winner uniformly first, animates the wheel to it, then picks that area. Either way a 5-second **Get Ready** screen (`TIMING.readyMs`) runs before the first question and cannot be cut short (Ben rejected a Skip button; Escape still returns to the wheel). *Added 2026-09-17 after QA on a real machine; the first cut had dropped it.*
+- **Dropped** from the old flow: difficulty slider, loading screens, `/api/results` AI feedback (replaced by score-band static copy), the footer link wall (one-line footer stays).
 - **Kept**: option shuffling at deal time (load-bearing: the model biases correct-answer position; `web/lib/shuffleArray.ts`), answer lock + 1.5s reveal (correct green, wrong red, others faded) then auto-advance, live score, "Question N of 5", confetti when score/total > 0.5 (i.e. ≥ 3), the "Your Future in IT Starts Here" Brightpoint blurb, brand palette and neo-brutalist look.
 - **Demo-table extras** (one `TIMING` object at the top of the script): results screen auto-returns to the wheel after 30s; an idle quiz (no input for 90s) returns to the wheel; an always-visible "Back to wheel" button during the quiz; `Escape` also returns.
 - Helper scripts are Node (`.mjs`, zero dependencies; Node 24 is on this box, the repo is Node, and there is no `jq`). They are only for regenerating the bank, never needed to play.
@@ -105,8 +105,9 @@ Controller (thin, impure): `renderWheel()`, `spin()`, `startArea(i)`, `answer(op
 ## Screens (one `<section class="screen">` each, toggled with `hidden`; `[hidden]{display:none!important}` so flex screens still hide; `showScreen` moves focus to the section's heading)
 
 1. **#screen-launch**: wordmark "IT Trivia **Challenge**" (orange span as `web/components/WelcomeScreen.tsx:20-22`), tagline, hint line, `.wheel-wrap`, one-line footer.
-2. **#screen-quiz**: area-colored header via `--area-color` (emoji, area name, "Question n of 5" and score in `aria-live="polite"` spans); `.card` with the question `h3`; `#options` grid of four `<button class="option" data-i>` each with a `<kbd>` 1–4 badge; keys 1–4 answer; "← Back to wheel" button. On answer: set `answered` before any DOM work, add `.correct`/`.wrong`/`.faded`, wait `revealMs`, advance; after Q5 → results. Quitting mid-reveal clears the reveal timer.
-3. **#screen-results**: `<canvas id="confetti">` (guard `if (!ctx) return`, size on show, store rAF id, stop after 6s and on `showScreen`) + `.card.results`: "Your score", big percentage, `N / 5 correct`, band title + message, the Brightpoint pitch aside (text from `web/services/triviaApi.ts:85-89`), primary **Spin again** button, "Back to the wheel in 30s" countdown.
+2. **#screen-ready**: full-bleed `--area-color` background; eyebrow "Get ready", emoji + area `h2`, tagline pill (the `AREAS[i].tagline` strings), a ring (`stroke-dashoffset` drained by a 100 ms tick) around the seconds left (`role="timer"`, counts 5→1, never shows 0). No Skip button and no skip key: it ends only on `TIMING.readyMs`; Escape returns to the wheel; number keys are ignored. `readyMs: 0` bypasses the screen (the smoke tests use that).
+3. **#screen-quiz**: area-colored header via `--area-color` (emoji, area name, "Question n of 5" and score in `aria-live="polite"` spans); `.card` with the question `h3`; `#options` grid of four `<button class="option" data-i>` each with a `<kbd>` 1–4 badge; keys 1–4 answer; "← Back to wheel" button. On answer: set `answered` before any DOM work, add `.correct`/`.wrong`/`.faded`, wait `revealMs`, advance; after Q5 → results. Quitting mid-reveal clears the reveal timer.
+4. **#screen-results**: `<canvas id="confetti">` (guard `if (!ctx) return`, size on show, store rAF id, stop after 6s and on `showScreen`) + `.card.results`: "Your score", big percentage, `N / 5 correct`, band title + message, the Brightpoint pitch aside (text from `web/services/triviaApi.ts:85-89`), primary **Spin again** button, "Back to the wheel in 30s" countdown.
 
 ## CSS (inline, ~180 lines)
 
@@ -151,8 +152,9 @@ Hosting the file at `https://trivia.benlamb.net/offline/` for QR-code access (fi
 
 ## Status (2026-09-17)
 
-Implemented as planned. `offline/index.html` (39 KB, one set of 25 Easier questions embedded), `lib/bank.mjs`,
-`fetch-set.mjs`, `build-bank.mjs`, four test files (29 tests, `node --test 'offline/test/*.test.mjs'`), `README.md`.
+Implemented as planned. `offline/index.html` (43 KB, one set of 25 Easier questions embedded), `lib/bank.mjs`,
+`fetch-set.mjs`, `build-bank.mjs`, five test files (34 tests, `node --test 'offline/test/*.test.mjs'`), `README.md`.
 Question 5 of `sets/easier-001.json` was rephrased by hand (it answered itself) and re-embedded. Not yet viewed in a
 real browser from this VPS (no browser here); happy-dom covers the logic, the manual checklist above still applies.
-Nothing committed or pushed.
+Committed and pushed 2026-09-17. Later that day, after QA, the Get Ready countdown (`#screen-ready`, `TIMING.readyMs`,
+`test/ready.test.mjs`) was added on the Mac clone.

@@ -10,6 +10,7 @@ How the IT Trivia Challenge monorepo is wired: a React SPA, a small Genkit API p
 |------|-------|------|
 | `web/` | React 19, Vite 8, TypeScript | SPA; calls `/api/*` only |
 | `api/` | Express, Genkit, zod | Gemini proxy; secrets in `api/.env` (gitignored) |
+| `offline/` | Plain HTML/CSS/JS, Node scripts | Single-file offline edition with an embedded question bank; no API, not deployed (see `offline/README.md`) |
 | `.github/workflows/` | GitHub Actions | `ci.yml` on PRs; `deploy.yml` on push to `main` |
 
 Backend source lives in **`api/`** inside the repo. In production, a systemd unit named `trivia-api` runs `api/index.js` from the deployed clone — that name is the **service**, not a separate top-level app directory.

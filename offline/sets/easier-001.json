@@ -1,0 +1,284 @@
+{
+  "id": "easier-001",
+  "difficulty": "easier",
+  "model": "googleai/gemini-3.7-flash",
+  "generatedAt": "2026-09-17T13:36:43.010Z",
+  "source": "https://trivia.benlamb.net/api/questions",
+  "questions": [
+    {
+      "category": "Networking & Internet",
+      "text": "What device is primarily used to connect a home network to the internet?",
+      "options": [
+        "Router",
+        "Monitor",
+        "Flash drive",
+        "Power supply"
+      ],
+      "correctAnswer": "Router"
+    },
+    {
+      "category": "Networking & Internet",
+      "text": "What does a web browser address bar display to indicate a secure connection?",
+      "options": [
+        "A padlock icon",
+        "A red exclamation mark",
+        "A paperclip icon",
+        "A blinking cursor"
+      ],
+      "correctAnswer": "A padlock icon"
+    },
+    {
+      "category": "Networking & Internet",
+      "text": "What is the unique numerical label assigned to each device connected to a computer network?",
+      "options": [
+        "IP address",
+        "ZIP code",
+        "Serial key",
+        "Bar code"
+      ],
+      "correctAnswer": "IP address"
+    },
+    {
+      "category": "Networking & Internet",
+      "text": "Which technology allows devices to connect to a local network without physical cables?",
+      "options": [
+        "Wi-Fi",
+        "Ethernet",
+        "HDMI",
+        "VGA"
+      ],
+      "correctAnswer": "Wi-Fi"
+    },
+    {
+      "category": "Networking & Internet",
+      "text": "What is the term for sending a file from your device to a remote server?",
+      "options": [
+        "Downloading",
+        "Uploading",
+        "Streaming",
+        "Browsing"
+      ],
+      "correctAnswer": "Uploading"
+    },
+    {
+      "category": "Artificial Intelligence",
+      "text": "What is the term for computer systems performing tasks that normally require human intelligence?",
+      "options": [
+        "Artificial Intelligence",
+        "Cloud Storage",
+        "Operating System",
+        "Virtual Memory"
+      ],
+      "correctAnswer": "Artificial Intelligence"
+    },
+    {
+      "category": "Artificial Intelligence",
+      "text": "What is an AI program designed to simulate conversation with human users called?",
+      "options": [
+        "Chatbot",
+        "Web browser",
+        "Spreadsheet",
+        "Antivirus"
+      ],
+      "correctAnswer": "Chatbot"
+    },
+    {
+      "category": "Artificial Intelligence",
+      "text": "Which branch of AI focuses on teaching computers to learn from data without being explicitly programmed?",
+      "options": [
+        "Machine Learning",
+        "Web Hosting",
+        "Data Compression",
+        "Hardware Design"
+      ],
+      "correctAnswer": "Machine Learning"
+    },
+    {
+      "category": "Artificial Intelligence",
+      "text": "Which AI feature allows a smartphone to unlock by scanning a user's face?",
+      "options": [
+        "Facial recognition",
+        "GPS tracking",
+        "Voice dialing",
+        "Autocorrect"
+      ],
+      "correctAnswer": "Facial recognition"
+    },
+    {
+      "category": "Artificial Intelligence",
+      "text": "What type of AI can create brand new content like essays, images, and music?",
+      "options": [
+        "Generative AI",
+        "Static AI",
+        "Storage AI",
+        "Network AI"
+      ],
+      "correctAnswer": "Generative AI"
+    },
+    {
+      "category": "Program and Database Development",
+      "text": "What is an error or mistake in computer code called?",
+      "options": [
+        "Bug",
+        "Patch",
+        "Pixel",
+        "Script"
+      ],
+      "correctAnswer": "Bug"
+    },
+    {
+      "category": "Program and Database Development",
+      "text": "What is a structured collection of related data stored electronically called?",
+      "options": [
+        "Database",
+        "Compiler",
+        "Firewall",
+        "Motherboard"
+      ],
+      "correctAnswer": "Database"
+    },
+    {
+      "category": "Program and Database Development",
+      "text": "Which standard language is commonly used to manage and query relational databases?",
+      "options": [
+        "SQL",
+        "HTML",
+        "CSS",
+        "JSON"
+      ],
+      "correctAnswer": "SQL"
+    },
+    {
+      "category": "Program and Database Development",
+      "text": "In computer programming, what is used to store a value that can change during execution?",
+      "options": [
+        "Variable",
+        "Constant",
+        "Comment",
+        "Header"
+      ],
+      "correctAnswer": "Variable"
+    },
+    {
+      "category": "Program and Database Development",
+      "text": "Which programming language is named after a type of snake and is known for easy readability?",
+      "options": [
+        "Python",
+        "Cobol",
+        "Ruby",
+        "Swift"
+      ],
+      "correctAnswer": "Python"
+    },
+    {
+      "category": "Cybersecurity",
+      "text": "What is a fraudulent email trying to trick you into revealing personal passwords called?",
+      "options": [
+        "Phishing",
+        "Streaming",
+        "Buffering",
+        "Backing up"
+      ],
+      "correctAnswer": "Phishing"
+    },
+    {
+      "category": "Cybersecurity",
+      "text": "What security method requires a password plus a temporary phone code to log in?",
+      "options": [
+        "Two-factor authentication",
+        "Single sign-on",
+        "Data compression",
+        "Private browsing"
+      ],
+      "correctAnswer": "Two-factor authentication"
+    },
+    {
+      "category": "Cybersecurity",
+      "text": "What general term describes harmful software like viruses, worms, and spyware?",
+      "options": [
+        "Malware",
+        "Firmware",
+        "Shareware",
+        "Hardware"
+      ],
+      "correctAnswer": "Malware"
+    },
+    {
+      "category": "Cybersecurity",
+      "text": "What makes a password the strongest against unauthorized guessing?",
+      "options": [
+        "A long mix of characters",
+        "Your birth year",
+        "The word password",
+        "Your pet's name"
+      ],
+      "correctAnswer": "A long mix of characters"
+    },
+    {
+      "category": "Cybersecurity",
+      "text": "What software or hardware tool monitors and filters incoming and outgoing network traffic?",
+      "options": [
+        "Firewall",
+        "Hard drive",
+        "Keyboard",
+        "Projector"
+      ],
+      "correctAnswer": "Firewall"
+    },
+    {
+      "category": "IT Operations and Support",
+      "text": "A desktop computer monitor remains completely black when turned on. What is the BEST first step?",
+      "options": [
+        "Check cable connections",
+        "Buy a new monitor",
+        "Reinstall Windows",
+        "Replace the processor"
+      ],
+      "correctAnswer": "Check cable connections"
+    },
+    {
+      "category": "IT Operations and Support",
+      "text": "A user complains that a printer will not print their document. What should you check first?",
+      "options": [
+        "Paper and power status",
+        "Network server hardware",
+        "Printer warranty dates",
+        "Computer motherboard"
+      ],
+      "correctAnswer": "Paper and power status"
+    },
+    {
+      "category": "IT Operations and Support",
+      "text": "An application on a computer freezes and will not respond to clicks. What is the BEST first step?",
+      "options": [
+        "Force close the application",
+        "Format the hard drive",
+        "Unplug the computer immediately",
+        "Delete all saved files"
+      ],
+      "correctAnswer": "Force close the application"
+    },
+    {
+      "category": "IT Operations and Support",
+      "text": "A laptop suddenly loses Wi-Fi connection at home. What is a recommended first troubleshooting step?",
+      "options": [
+        "Restart the wireless router",
+        "Call an electrician",
+        "Replace the laptop battery",
+        "Reinstall the operating system"
+      ],
+      "correctAnswer": "Restart the wireless router"
+    },
+    {
+      "category": "IT Operations and Support",
+      "text": "A user cannot hear any sound from a desktop computer. What should you check first?",
+      "options": [
+        "Volume and mute settings",
+        "Internal power supply",
+        "Monitor screen brightness",
+        "Keyboard language layout"
+      ],
+      "correctAnswer": "Volume and mute settings"
+    }
+  ]
+}

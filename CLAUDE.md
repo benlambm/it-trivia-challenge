@@ -12,6 +12,7 @@ Single maintainer: commit on **`main`**, push when asked. No branches, worktrees
 |------|---------|
 | `web/` | React 19 + Vite 8 + TS. Build → `web/dist/`. |
 | `api/` | Genkit/Express Gemini proxy. Listens `127.0.0.1:3000`. |
+| `offline/` | Single-file offline edition (`offline/index.html`, spin wheel, hardcoded question bank). Not built or deployed by CI; see `offline/README.md`. |
 | `/var/www/trivia.benlamb.net/` | **Served artifacts only** (no source). Copied from `web/dist/` on deploy. |
 
 **nginx:** `/` → static root; `/api/` → `proxy_pass http://127.0.0.1:3000/api/`. Deny `^~ /src/` (404).

@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>IT Trivia Challenge (Offline)</title>
+<style>
+:root{
+  --navy:#173A45;--orange:#E87722;--red:#D63A4C;--cyan:#0891b2;--purple:#9333ea;
+  --green:#10b981;--amber:#f59e0b;--bg:#f8fafc;
+  --slate-100:#f1f5f9;--slate-200:#e2e8f0;--slate-300:#cbd5e1;--slate-400:#94a3b8;--slate-600:#475569;
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --spin-ease:cubic-bezier(.17,.67,.12,.99);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--navy);font-family:var(--font);line-height:1.35;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+button:disabled{cursor:default}
+:focus-visible{outline:4px solid var(--amber);outline-offset:3px}
+main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+.screen{flex:1;display:flex;flex-direction:column;align-items:center;width:100%;padding:20px 16px 28px}
+
+/* ---------- launch ---------- */
+.brand{margin:8px 0 4px;font-size:clamp(2rem,6vw,3.5rem);font-weight:900;letter-spacing:-.02em;text-align:center}
+.brand .accent{color:var(--orange)}
+.brand:focus{outline:none}
+.tagline{margin:0 0 10px;color:var(--slate-600);font-weight:600;text-align:center;font-size:clamp(.95rem,2.5vw,1.2rem)}
+.hint{margin:6px 0 16px;padding:8px 18px;background:#fff;border:3px solid var(--navy);border-radius:999px;box-shadow:4px 4px 0 rgba(23,58,69,.2);font-weight:800;text-align:center}
+.wheel-wrap{position:relative;width:min(88vw,62vh,540px);aspect-ratio:1;margin:10px auto 18px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.wheel{display:block;width:100%;height:100%;transition:transform 0ms var(--spin-ease);will-change:transform}
+.wheel.spinning{pointer-events:none}
+.wheel .wedge{cursor:pointer}
+.wheel .wedge:focus{outline:none}
+.wheel .wedge path{transition:filter .15s}
+@media(hover:hover){.wheel .wedge:hover path{filter:brightness(1.12)}}
+.wheel .wedge:focus-visible path{stroke:var(--amber);stroke-width:8}
+.wedge-label{font-family:var(--font);font-weight:900;font-size:16px;fill:#fff;stroke:rgba(23,58,69,.6);stroke-width:3px;paint-order:stroke fill;stroke-linejoin:round;pointer-events:none}
+.wedge-emoji{font-size:26px;stroke:none}
+.pointer{position:absolute;top:-12px;left:50%;z-index:2;width:40px;height:46px;transform:translateX(-50%);filter:drop-shadow(0 3px 0 rgba(23,58,69,.35))}
+.pointer svg{display:block;width:100%;height:100%}
+.hub{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.spin-btn{pointer-events:auto;width:23%;aspect-ratio:1;padding:0;border-radius:50%;background:var(--orange);color:#fff;border:4px solid var(--navy);box-shadow:4px 4px 0 var(--navy);font-weight:900;font-size:clamp(.9rem,4.2vw,1.5rem);letter-spacing:.06em;transition:transform .12s,box-shadow .12s,background .12s}
+@media(hover:hover){.spin-btn:not(:disabled):hover{background:var(--red);transform:translateY(-3px);box-shadow:6px 6px 0 var(--navy)}}
+.spin-btn:not(:disabled):active{transform:translateY(0);box-shadow:none}
+.spin-btn:disabled{background:var(--slate-400);box-shadow:none}
+.foot{margin:auto 0 0;padding-top:14px;font-size:.8rem;font-weight:700;color:var(--slate-400);text-align:center}
+
+/* ---------- quiz ---------- */
+.quiz{gap:18px}
+.area-bar{width:100%;max-width:900px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 18px;background:var(--area-color,var(--navy));color:#fff;border:4px solid var(--navy);border-radius:18px;box-shadow:6px 6px 0 rgba(23,58,69,.2)}
+.area-title{display:flex;align-items:center;gap:12px;min-width:0}
+.area-emoji{font-size:1.9rem;line-height:1}
+.area-title h2{margin:0;font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:900;line-height:1.1}
+.area-title h2:focus{outline:none}
+.meta{display:flex;align-items:center;gap:14px;font-weight:800;white-space:nowrap}
+.meta .sep{width:2px;height:26px;background:rgba(255,255,255,.4)}
+.meta .score{font-size:1.25rem;font-weight:900}
+.quiz-body{width:100%;max-width:900px;display:flex;flex-direction:column;gap:16px}
+.card{background:#fff;border:4px solid var(--navy);border-radius:24px;box-shadow:8px 8px 0 rgba(23,58,69,.2)}
+.question-card{padding:22px 20px 24px}
+.qlabel{display:inline-block;margin:0 0 12px;padding:4px 10px;background:var(--slate-200);color:var(--slate-600);border-radius:8px;font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.qtext{margin:0 0 20px;font-size:clamp(1.25rem,3.6vw,2rem);font-weight:900;line-height:1.25;overflow-wrap:anywhere}
+.options{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:768px){.options{grid-template-columns:1fr 1fr}}
+.option{display:flex;align-items:center;gap:14px;width:100%;min-height:64px;padding:14px 16px;background:#fff;color:var(--navy);text-align:left;border:4px solid var(--navy);border-radius:16px;box-shadow:4px 4px 0 var(--navy);font-weight:700;font-size:clamp(1rem,2.5vw,1.2rem);line-height:1.25;transition:transform .15s,box-shadow .15s,background .15s,color .15s,opacity .15s}
+.option kbd{flex:none;width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:var(--slate-100);border:2px solid var(--navy);font-family:inherit;font-weight:900;font-size:.95rem}
+.option-text{flex:1;overflow-wrap:anywhere}
+.option .mark{flex:none;font-weight:900;font-size:1.3rem;line-height:1}
+@media(hover:hover){
+  .option:not(:disabled):hover{transform:translateY(-3px);background:var(--orange);color:#fff;box-shadow:6px 6px 0 var(--navy)}
+  .option:not(:disabled):hover kbd{background:#fff;color:var(--navy)}
+}
+.option:not(:disabled):active{transform:translateY(0);box-shadow:none}
+.option.correct{background:var(--green);color:#fff;transform:scale(1.02)}
+.option.correct kbd{background:#fff;color:var(--green)}
+.option.wrong{background:var(--red);color:#fff}
+.option.wrong kbd{background:#fff;color:var(--red)}
+.option.faded{opacity:.55;background:var(--slate-100);border-color:var(--slate-300);color:var(--slate-400);box-shadow:none}
+.option.faded kbd{border-color:var(--slate-300);color:var(--slate-400)}
+.quiz-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.keys-hint{margin:0;font-size:.85rem;font-weight:700;color:var(--slate-400)}
+.link-btn{padding:8px 16px;background:#fff;border:3px solid var(--navy);border-radius:999px;box-shadow:3px 3px 0 var(--navy);font-weight:800}
+.link-btn:active{transform:translateY(1px);box-shadow:none}
+
+/* ---------- results ---------- */
+.results{position:relative;overflow:hidden;justify-content:center}
+#confetti{position:absolute;inset:0;z-index:0;width:100%;height:100%;pointer-events:none}
+.results-card{position:relative;z-index:1;width:100%;max-width:720px;overflow:hidden;box-shadow:12px 12px 0 rgba(23,58,69,.2)}
+.score-head{padding:28px 20px 24px;background:var(--area-color,var(--navy));color:#fff;text-align:center;border-bottom:4px solid var(--navy)}
+.eyebrow{margin:0 0 6px;font-weight:800;letter-spacing:.04em;font-size:clamp(.95rem,2.6vw,1.15rem);opacity:.95}
+.score-head h2{margin:0 0 10px;font-size:clamp(1.8rem,6vw,2.8rem);font-weight:900;line-height:1.1}
+.score-head h2:focus{outline:none}
+.pct{font-size:clamp(4rem,16vw,7rem);font-weight:900;line-height:1;letter-spacing:-.04em}
+.frac{margin:8px 0 0;font-size:clamp(1.2rem,3.5vw,1.6rem);font-weight:800}
+.results-body{display:flex;flex-direction:column;gap:18px;padding:22px 20px 24px}
+.band-msg{margin:0;text-align:center;font-size:clamp(1.1rem,3vw,1.4rem);font-weight:600;font-style:italic;color:var(--slate-600)}
+.pitch{display:flex;gap:16px;align-items:flex-start;padding:18px;background:#fff7ed;border:4px solid var(--orange);border-radius:18px}
+.bang{flex:none;width:48px;height:48px;display:grid;place-items:center;border-radius:50%;background:var(--orange);color:#fff;border:4px solid var(--navy);font-weight:900;font-size:1.5rem}
+.pitch h3{margin:0 0 6px;font-size:1.2rem;font-weight:900}
+.pitch p{margin:0;font-weight:500;line-height:1.45}
+.btn{display:block;width:100%;padding:18px;border:4px solid var(--navy);border-radius:16px;box-shadow:4px 4px 0 var(--navy);font-weight:900;font-size:1.3rem;transition:transform .12s,box-shadow .12s,background .12s}
+.btn.primary{background:var(--navy);color:#fff}
+@media(hover:hover){.btn:hover{transform:translateY(-3px);box-shadow:6px 6px 0 var(--navy)}.btn.primary:hover{background:var(--orange)}}
+.btn:active{transform:translateY(0);box-shadow:none}
+.auto-return{margin:0;text-align:center;font-size:.85rem;font-weight:700;color:var(--slate-400)}
+
+@media(prefers-reduced-motion:reduce){
+  .option,.btn,.spin-btn,.wheel .wedge path{transition:none}
+  .btn:hover,.option:not(:disabled):hover,.spin-btn:not(:disabled):hover{transform:none}
+}
+</style>
+</head>
+<body>
+<main>
+  <section id="screen-launch" class="screen launch">
+    <h1 class="brand" id="brand" tabindex="-1">IT Trivia <span class="accent">Challenge</span></h1>
+    <p class="tagline">Master the tech industry. Test your skills. Build your future.</p>
+    <p class="hint" id="hint" aria-live="polite">Spin the wheel or tap an area to start a 5-question quiz</p>
+    <div class="wheel-wrap">
+      <div class="pointer" aria-hidden="true">
+        <svg viewBox="0 0 40 46"><path d="M20 44 L3 6 Q20 -3 37 6 Z" fill="#173A45" stroke="#fff" stroke-width="3" stroke-linejoin="round"></path></svg>
+      </div>
+      <svg id="wheel" class="wheel" viewBox="0 0 400 400" role="group" aria-label="Choose an area"></svg>
+      <div class="hub"><button id="spin" type="button" class="spin-btn" aria-label="Spin the wheel">SPIN</button></div>
+    </div>
+    <p class="foot" id="foot">Brightpoint Community College &middot; IT Trivia Challenge &middot; offline edition</p>
+  </section>
+
+  <section id="screen-quiz" class="screen quiz" hidden>
+    <header class="area-bar" id="area-bar">
+      <div class="area-title"><span class="area-emoji" id="quiz-emoji" aria-hidden="true"></span><h2 id="quiz-area" tabindex="-1"></h2></div>
+      <div class="meta">
+        <span id="quiz-progress" aria-live="polite"></span>
+        <span class="sep" aria-hidden="true"></span>
+        <span class="score" id="quiz-score" aria-live="polite"></span>
+      </div>
+    </header>
+    <div class="quiz-body">
+      <article class="card question-card">
+        <p class="qlabel" id="q-label"></p>
+        <h3 class="qtext" id="q-text"></h3>
+        <div id="options" class="options"></div>
+      </article>
+      <div class="quiz-foot">
+        <p class="keys-hint">Keyboard: press 1&ndash;4 to answer, Esc to leave</p>
+        <button id="quit" type="button" class="link-btn">&larr; Back to the wheel</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-results" class="screen results" hidden>
+    <canvas id="confetti" aria-hidden="true"></canvas>
+    <article class="card results-card" id="results-card">
+      <div class="score-head">
+        <p class="eyebrow" id="results-area"></p>
+        <h2 id="band-title" tabindex="-1"></h2>
+        <div class="pct" id="pct"></div>
+        <p class="frac" id="frac"></p>
+      </div>
+      <div class="results-body">
+        <p class="band-msg" id="band-msg"></p>
+        <aside class="pitch">
+          <div class="bang" aria-hidden="true">!</div>
+          <div>
+            <h3>Your Future in IT Starts Here</h3>
+            <p>Brightpoint Community College offers amazing pathways into IT careers. Whether you got a perfect score or are just starting, there's a class for you!</p>
+          </div>
+        </aside>
+        <button id="again" type="button" class="btn primary">Spin again</button>
+        <p class="auto-return" id="auto-return"></p>
+      </div>
+    </article>
+  </section>
+</main>
+
+<!-- Question bank. Generated by offline/build-bank.mjs from offline/sets/*.json; do not hand-edit. -->
+<script type="application/json" id="question-sets">
+[
+  {"id":"easier-001","difficulty":"easier","model":"googleai/gemini-3.7-flash","generatedAt":"2026-09-17T13:36:43.010Z","source":"https://trivia.benlamb.net/api/questions","questions":[
+    {"category":"Networking \u0026 Internet","text":"What device is primarily used to connect a home network to the internet?","options":["Router","Monitor","Flash drive","Power supply"],"correctAnswer":"Router"},
+    {"category":"Networking \u0026 Internet","text":"What does a web browser address bar display to indicate a secure connection?","options":["A padlock icon","A red exclamation mark","A paperclip icon","A blinking cursor"],"correctAnswer":"A padlock icon"},
+    {"category":"Networking \u0026 Internet","text":"What is the unique numerical label assigned to each device connected to a computer network?","options":["IP address","ZIP code","Serial key","Bar code"],"correctAnswer":"IP address"},
+    {"category":"Networking \u0026 Internet","text":"Which technology allows devices to connect to a local network without physical cables?","options":["Wi-Fi","Ethernet","HDMI","VGA"],"correctAnswer":"Wi-Fi"},
+    {"category":"Networking \u0026 Internet","text":"What is the term for sending a file from your device to a remote server?","options":["Downloading","Uploading","Streaming","Browsing"],"correctAnswer":"Uploading"},
+    {"category":"Artificial Intelligence","text":"What is the term for computer systems performing tasks that normally require human intelligence?","options":["Artificial Intelligence","Cloud Storage","Operating System","Virtual Memory"],"correctAnswer":"Artificial Intelligence"},
+    {"category":"Artificial Intelligence","text":"What is an AI program designed to simulate conversation with human users called?","options":["Chatbot","Web browser","Spreadsheet","Antivirus"],"correctAnswer":"Chatbot"},
+    {"category":"Artificial Intelligence","text":"Which branch of AI focuses on teaching computers to learn from data without being explicitly programmed?","options":["Machine Learning","Web Hosting","Data Compression","Hardware Design"],"correctAnswer":"Machine Learning"},
+    {"category":"Artificial Intelligence","text":"Which AI feature allows a smartphone to unlock by scanning a user's face?","options":["Facial recognition","GPS tracking","Voice dialing","Autocorrect"],"correctAnswer":"Facial recognition"},
+    {"category":"Artificial Intelligence","text":"What type of AI can create brand new content like essays, images, and music?","options":["Generative AI","Static AI","Storage AI","Network AI"],"correctAnswer":"Generative AI"},
+    {"category":"Program and Database Development","text":"What is an error or mistake in computer code called?","options":["Bug","Patch","Pixel","Script"],"correctAnswer":"Bug"},
+    {"category":"Program and Database Development","text":"What is a structured collection of related data stored electronically called?","options":["Database","Compiler","Firewall","Motherboard"],"correctAnswer":"Database"},
+    {"category":"Program and Database Development","text":"Which standard language is commonly used to manage and query relational databases?","options":["SQL","HTML","CSS","JSON"],"correctAnswer":"SQL"},
+    {"category":"Program and Database Development","text":"In computer programming, what is used to store a value that can change during execution?","options":["Variable","Constant","Comment","Header"],"correctAnswer":"Variable"},
+    {"category":"Program and Database Development","text":"Which programming language is named after a type of snake and is known for easy readability?","options":["Python","Cobol","Ruby","Swift"],"correctAnswer":"Python"},
+    {"category":"Cybersecurity","text":"What is a fraudulent email trying to trick you into revealing personal passwords called?","options":["Phishing","Streaming","Buffering","Backing up"],"correctAnswer":"Phishing"},
+    {"category":"Cybersecurity","text":"What security method requires a password plus a temporary phone code to log in?","options":["Two-factor authentication","Single sign-on","Data compression","Private browsing"],"correctAnswer":"Two-factor authentication"},
+    {"category":"Cybersecurity","text":"What general term describes harmful software like viruses, worms, and spyware?","options":["Malware","Firmware","Shareware","Hardware"],"correctAnswer":"Malware"},
+    {"category":"Cybersecurity","text":"What makes a password the strongest against unauthorized guessing?","options":["A long mix of characters","Your birth year","The word password","Your pet's name"],"correctAnswer":"A long mix of characters"},
+    {"category":"Cybersecurity","text":"What software or hardware tool monitors and filters incoming and outgoing network traffic?","options":["Firewall","Hard drive","Keyboard","Projector"],"correctAnswer":"Firewall"},
+    {"category":"IT Operations and Support","text":"A desktop computer monitor remains completely black when turned on. What is the BEST first step?","options":["Check cable connections","Buy a new monitor","Reinstall Windows","Replace the processor"],"correctAnswer":"Check cable connections"},
+    {"category":"IT Operations and Support","text":"A user complains that a printer will not print their document. What should you check first?","options":["Paper and power status","Network server hardware","Printer warranty dates","Computer motherboard"],"correctAnswer":"Paper and power status"},
+    {"category":"IT Operations and Support","text":"An application on a computer freezes and will not respond to clicks. What is the BEST first step?","options":["Force close the application","Format the hard drive","Unplug the computer immediately","Delete all saved files"],"correctAnswer":"Force close the application"},
+    {"category":"IT Operations and Support","text":"A laptop suddenly loses Wi-Fi connection at home. What is a recommended first troubleshooting step?","options":["Restart the wireless router","Call an electrician","Replace the laptop battery","Reinstall the operating system"],"correctAnswer":"Restart the wireless router"},
+    {"category":"IT Operations and Support","text":"A user cannot hear any sound from a desktop computer. What should you check first?","options":["Volume and mute settings","Internal power supply","Monitor screen brightness","Keyboard language layout"],"correctAnswer":"Volume and mute settings"}
+  ]}
+]
+</script>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- configuration ----------
+  // name must equal the API "category" string exactly; lines is display-only (wheel label).
+  var AREAS = [
+    { key: 'net',   name: 'Networking & Internet',            lines: ['Networking', '& Internet'],   emoji: '🌐', color: '#0891b2', tagline: 'Connecting the world at light speed!' },
+    { key: 'ai',    name: 'Artificial Intelligence',          lines: ['Artificial', 'Intelligence'], emoji: '🤖', color: '#9333ea', tagline: 'Unlocking the power of machine minds!' },
+    { key: 'dev',   name: 'Program and Database Development', lines: ['Programming', '& Databases'], emoji: '💻', color: '#E87722', tagline: 'Building the future, one line of code at a time!' },
+    { key: 'cyber', name: 'Cybersecurity',                    lines: ['Cyber', 'Security'],          emoji: '🛡️', color: '#D63A4C', tagline: 'Defending the digital frontier!' },
+    { key: 'ops',   name: 'IT Operations and Support',        lines: ['IT Ops', '& Support'],        emoji: '🔧', color: '#173A45', tagline: 'Solving real-world tech mysteries!' }
+  ];
+  var ACTIVE_DIFFICULTIES = ['easier']; // sets with other difficulties stay embedded but unused
+  var QUESTIONS_PER_QUIZ = 5;
+  var TIMING = {
+    spinMs: 4200,        // wheel animation
+    spinReducedMs: 600,  // with prefers-reduced-motion
+    settleMs: 500,       // pause after the wheel stops before the quiz starts
+    revealMs: 1500,      // show correct/wrong before advancing
+    resultsIdleMs: 30000,// results screen auto-returns to the wheel
+    quizIdleMs: 90000    // an abandoned quiz returns to the wheel
+  };
+  var WHEEL = { cx: 200, cy: 200, r: 190, restRotation: -36, labelRadius: 0.6 };
+  var DEFAULT_HINT = 'Spin the wheel or tap an area to start a 5-question quiz';
+
+  var QUESTION_SETS = JSON.parse(document.getElementById('question-sets').textContent);
+
+  // ---------- pure: geometry (degrees clockwise from 12 o'clock; screen y points down) ----------
+  var SEG = AREAS.length;
+  var SEG_DEG = 360 / SEG;
+  function mod(a, n) { return ((a % n) + n) % n; }
+  function toRad(deg) { return deg * Math.PI / 180; }
+  function fmt(n) { return Math.round(n * 1000) / 1000; }
+  function polarToXY(cx, cy, r, deg) { return { x: cx + r * Math.sin(toRad(deg)), y: cy - r * Math.cos(toRad(deg)) }; }
+  function wedgeStart(i) { return i * SEG_DEG; }
+  function wedgeMid(i) { return i * SEG_DEG + SEG_DEG / 2; }
+  function wedgePath(cx, cy, r, i) {
+    var a = polarToXY(cx, cy, r, wedgeStart(i));
+    var b = polarToXY(cx, cy, r, wedgeStart(i) + SEG_DEG);
+    return 'M ' + cx + ' ' + cy + ' L ' + fmt(a.x) + ' ' + fmt(a.y) + ' A ' + r + ' ' + r + ' 0 0 1 ' + fmt(b.x) + ' ' + fmt(b.y) + ' Z';
+  }
+  function labelPos(cx, cy, r, i, k) { return polarToXY(cx, cy, r * (k == null ? WHEEL.labelRadius : k), wedgeMid(i)); }
+  function areaIndexAtPointer(rotation) { return Math.floor(mod(-rotation, 360) / SEG_DEG); }
+  function pickWinner(rand) { return Math.floor((rand || Math.random)() * SEG); }
+  // Absolute rotation that puts wedge `winner` under the fixed pointer after `turns` full turns.
+  function targetRotation(current, winner, opts) {
+    opts = opts || {};
+    var rand = opts.rand || Math.random;
+    var turnsMin = opts.turnsMin == null ? 4 : opts.turnsMin;
+    var turnsMax = opts.turnsMax == null ? 6 : opts.turnsMax;
+    var jitterMax = opts.jitterMax == null ? 28 : opts.jitterMax;
+    var turns = turnsMin + Math.floor(rand() * (turnsMax - turnsMin + 1));
+    var jitter = (rand() * 2 - 1) * jitterMax;
+    var rho = mod(-(wedgeMid(winner) + jitter), 360);
+    return current + 360 * turns + mod(rho - current, 360);
+  }
+
+  // ---------- pure: question selection ----------
+  function shuffle(arr, rand) {
+    rand = rand || Math.random;
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rand() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function buildPools(sets, areas, activeDifficulties) {
+    var pools = {};
+    areas.forEach(function (area) { pools[area.name] = []; });
+    sets.forEach(function (set) {
+      if (activeDifficulties.indexOf(set.difficulty) === -1) return;
+      set.questions.forEach(function (q, i) {
+        if (!pools[q.category]) return;
+        pools[q.category].push({ id: set.id + '#' + i, category: q.category, text: q.text, options: q.options.slice(), correctAnswer: q.correctAnswer });
+      });
+    });
+    return pools;
+  }
+  function newDeck(pool, rand) { return { all: pool.slice(), remaining: shuffle(pool, rand) }; }
+  // Deals n questions; refills from the full pool (minus what was just dealt) when the deck runs dry,
+  // so every question is seen before any repeats. With a 5-question pool this is "all 5, random order".
+  function deal(deck, n, rand) {
+    var remaining = deck.remaining.slice();
+    var dealt = [];
+    while (dealt.length < n && deck.all.length) {
+      if (!remaining.length) {
+        var dealtIds = {};
+        dealt.forEach(function (q) { dealtIds[q.id] = true; });
+        remaining = shuffle(deck.all.filter(function (q) { return !dealtIds[q.id]; }), rand);
+        if (!remaining.length) break;
+      }
+      dealt.push(remaining.shift());
+    }
+    return { dealt: dealt, deck: { all: deck.all, remaining: remaining } };
+  }
+  function prepareQuestion(q, rand) {
+    return { id: q.id, category: q.category, text: q.text, options: shuffle(q.options, rand), correctAnswer: q.correctAnswer };
+  }
+  function isCorrect(q, option) { return option === q.correctAnswer; }
+
+  // ---------- pure: results ----------
+  function scoreBand(score, total) {
+    var ratio = total ? score / total : 0;
+    var band;
+    if (ratio >= 1) band = ['Perfect score!', 'You crushed it. Future IT pro spotted.'];
+    else if (ratio >= 0.8) band = ['Excellent!', 'Just one away from perfect.'];
+    else if (ratio >= 0.6) band = ['Nice work!', 'You know your tech.'];
+    else if (ratio >= 0.4) band = ['Good try!', 'Every expert started somewhere.'];
+    else band = ['Thanks for playing!', 'Curiosity is the first step into IT.'];
+    return { title: band[0], message: band[1], celebrate: ratio > 0.5 };
+  }
+  function percent(score, total) { return total ? Math.round(score / total * 100) : 0; }
+
+  // ---------- state and DOM ----------
+  var pools = buildPools(QUESTION_SETS, AREAS, ACTIVE_DIFFICULTIES);
+  var state = {
+    screen: 'launch',
+    wheelRotation: WHEEL.restRotation,
+    spinning: false,
+    decks: {},
+    quiz: null,
+    timers: { idle: null, reveal: null, spin: null, countdown: null, confettiStop: null, confettiRaf: null }
+  };
+  function $(id) { return document.getElementById(id); }
+  var el = {
+    screens: { launch: $('screen-launch'), quiz: $('screen-quiz'), results: $('screen-results') },
+    brand: $('brand'), hint: $('hint'), wheel: $('wheel'), spin: $('spin'), foot: $('foot'),
+    areaBar: $('area-bar'), quizEmoji: $('quiz-emoji'), quizArea: $('quiz-area'), progress: $('quiz-progress'), score: $('quiz-score'),
+    qLabel: $('q-label'), qText: $('q-text'), options: $('options'), quit: $('quit'),
+    confetti: $('confetti'), resultsCard: $('results-card'), resultsArea: $('results-area'), bandTitle: $('band-title'),
+    pct: $('pct'), frac: $('frac'), bandMsg: $('band-msg'), again: $('again'), autoReturn: $('auto-return')
+  };
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  function setHint(text) { el.hint.textContent = text; }
+
+  // ---------- wheel ----------
+  function renderWheel() {
+    var cx = WHEEL.cx, cy = WHEEL.cy, r = WHEEL.r;
+    var parts = [];
+    AREAS.forEach(function (area, i) {
+      var p = labelPos(cx, cy, r, i);
+      var x = fmt(p.x), y = fmt(p.y);
+      var tspans = '<tspan class="wedge-emoji" x="' + x + '" dy="-1.15em">' + area.emoji + '</tspan>';
+      area.lines.forEach(function (line, li) {
+        tspans += '<tspan x="' + x + '" dy="' + (li === 0 ? '1.25em' : '1.15em') + '">' + esc(line) + '</tspan>';
+      });
+      parts.push(
+        '<g class="wedge" role="button" tabindex="0" data-area-index="' + i + '" aria-label="Play ' + esc(area.name) + '">' +
+          '<path d="' + wedgePath(cx, cy, r, i) + '" fill="' + area.color + '" stroke="#fff" stroke-width="4" stroke-linejoin="round"></path>' +
+          // Labels are rotated by -restRotation so they read horizontally while the wheel is at rest.
+          '<text class="wedge-label" x="' + x + '" y="' + y + '" text-anchor="middle" transform="rotate(' + (-WHEEL.restRotation) + ' ' + x + ' ' + y + ')">' + tspans + '</text>' +
+        '</g>'
+      );
+    });
+    parts.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="#173A45" stroke-width="8"></circle>');
+    parts.push('<circle cx="' + cx + '" cy="' + cy + '" r="44" fill="#fff" stroke="#173A45" stroke-width="4"></circle>');
+    el.wheel.innerHTML = parts.join('');
+    setWheelRotation(state.wheelRotation, 0);
+  }
+  function setWheelRotation(deg, durationMs) {
+    state.wheelRotation = deg;
+    el.wheel.style.transitionDuration = durationMs + 'ms';
+    el.wheel.style.transform = 'rotate(' + deg + 'deg)';
+  }
+  function forceReflow() {
+    if (typeof el.wheel.getBoundingClientRect === 'function') el.wheel.getBoundingClientRect();
+  }
+  function spin() {
+    if (state.screen !== 'launch' || state.spinning) return;
+    state.spinning = true;
+    el.wheel.classList.add('spinning');
+    el.spin.disabled = true;
+    var winner = pickWinner();
+    var reduced = reducedMotion();
+    var target = targetRotation(state.wheelRotation, winner, reduced ? { turnsMin: 0, turnsMax: 0 } : {});
+    var duration = reduced ? TIMING.spinReducedMs : TIMING.spinMs;
+    setHint('Spinning…');
+    setWheelRotation(target, duration);
+    state.timers.spin = setTimeout(function () {
+      state.timers.spin = null;
+      if (state.screen !== 'launch') return;
+      var landed = areaIndexAtPointer(state.wheelRotation);
+      if (landed !== winner) console.warn('wheel landed on', landed, 'but the winner is', winner);
+      state.spinning = false;
+      el.wheel.classList.remove('spinning');
+      el.spin.disabled = false;
+      startArea(winner);
+    }, duration + TIMING.settleMs);
+  }
+  function wedgeFromEvent(event) {
+    var node = event.target;
+    while (node && node !== el.wheel) {
+      if (node.getAttribute && node.getAttribute('data-area-index') !== null) return Number(node.getAttribute('data-area-index'));
+      node = node.parentNode;
+    }
+    return -1;
+  }
+  el.wheel.addEventListener('click', function (event) {
+    var i = wedgeFromEvent(event);
+    if (i >= 0) startArea(i);
+  });
+  el.wheel.addEventListener('keydown', function (event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    var i = wedgeFromEvent(event);
+    if (i < 0) return;
+    event.preventDefault();
+    startArea(i);
+  });
+  el.spin.addEventListener('click', spin);
+
+  // ---------- quiz ----------
+  function startArea(areaIndex) {
+    if (state.spinning || state.screen !== 'launch') return;
+    var area = AREAS[areaIndex];
+    if (!area) return;
+    if (!state.decks[area.name]) state.decks[area.name] = newDeck(pools[area.name] || []);
+    var result = deal(state.decks[area.name], QUESTIONS_PER_QUIZ);
+    state.decks[area.name] = result.deck;
+    if (!result.dealt.length) {
+      setHint('No ' + area.name + ' questions in the bank yet. Run build-bank.mjs.');
+      return;
+    }
+    state.quiz = { areaIndex: areaIndex, questions: result.dealt.map(function (q) { return prepareQuestion(q); }), index: 0, score: 0, answered: false };
+    showScreen('quiz');
+    renderQuestion();
+  }
+  function scoreText(score) { return score + (score === 1 ? ' pt' : ' pts'); }
+  function renderQuestion() {
+    var quiz = state.quiz;
+    var area = AREAS[quiz.areaIndex];
+    var q = quiz.questions[quiz.index];
+    var progress = 'Question ' + (quiz.index + 1) + ' of ' + quiz.questions.length;
+    el.areaBar.style.setProperty('--area-color', area.color);
+    el.quizEmoji.textContent = area.emoji;
+    el.quizArea.textContent = area.name;
+    el.progress.textContent = progress;
+    el.score.textContent = scoreText(quiz.score);
+    el.qLabel.textContent = progress;
+    el.qText.textContent = q.text;
+    el.options.innerHTML = '';
+    q.options.forEach(function (option, i) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'option';
+      button.setAttribute('data-i', String(i));
+      var kbd = document.createElement('kbd');
+      kbd.textContent = String(i + 1);
+      var text = document.createElement('span');
+      text.className = 'option-text';
+      text.textContent = option;
+      button.appendChild(kbd);
+      button.appendChild(text);
+      button.addEventListener('click', function () { answer(i); });
+      el.options.appendChild(button);
+    });
+    quiz.answered = false;
+    armIdle(TIMING.quizIdleMs);
+  }
+  function answer(optionIndex) {
+    var quiz = state.quiz;
+    if (!quiz || quiz.answered || state.screen !== 'quiz') return;
+    var q = quiz.questions[quiz.index];
+    if (optionIndex < 0 || optionIndex >= q.options.length) return;
+    quiz.answered = true;
+    var correct = isCorrect(q, q.options[optionIndex]);
+    if (correct) quiz.score += 1;
+    var buttons = el.options.querySelectorAll('.option');
+    for (var j = 0; j < buttons.length; j++) {
+      var button = buttons[j];
+      button.disabled = true;
+      if (isCorrect(q, q.options[j])) {
+        button.classList.add('correct');
+        addMark(button, '✓');
+      } else if (j === optionIndex) {
+        button.classList.add('wrong');
+        addMark(button, '✗');
+      } else {
+        button.classList.add('faded');
+      }
+    }
+    el.score.textContent = scoreText(quiz.score);
+    armIdle(TIMING.quizIdleMs);
+    state.timers.reveal = setTimeout(function () {
+      state.timers.reveal = null;
+      nextQuestion();
+    }, TIMING.revealMs);
+  }
+  function addMark(button, glyph) {
+    var mark = document.createElement('span');
+    mark.className = 'mark';
+    mark.setAttribute('aria-hidden', 'true');
+    mark.textContent = glyph;
+    button.appendChild(mark);
+  }
+  function nextQuestion() {
+    var quiz = state.quiz;
+    if (!quiz || state.screen !== 'quiz') return;
+    if (quiz.index + 1 < quiz.questions.length) {
+      quiz.index += 1;
+      renderQuestion();
+    } else {
+      showResults();
+    }
+  }
+  el.quit.addEventListener('click', function () { showScreen('launch'); });
+
+  // ---------- results ----------
+  function showResults() {
+    var quiz = state.quiz;
+    var area = AREAS[quiz.areaIndex];
+    var total = quiz.questions.length;
+    var band = scoreBand(quiz.score, total);
+    el.resultsCard.style.setProperty('--area-color', area.color);
+    el.resultsArea.textContent = '🎉 Congrats! You finished ' + area.name;
+    el.bandTitle.textContent = band.title;
+    el.pct.textContent = percent(quiz.score, total) + '%';
+    el.frac.textContent = quiz.score + ' / ' + total + ' correct';
+    el.bandMsg.textContent = band.message;
+    showScreen('results');
+    if (band.celebrate) startConfetti();
+    startAutoReturn(TIMING.resultsIdleMs);
+  }
+  function startAutoReturn(ms) {
+    var end = Date.now() + ms;
+    function tick() {
+      var left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+      el.autoReturn.textContent = 'Back to the wheel in ' + left + 's';
+      if (left <= 0) { showScreen('launch'); return; }
+      state.timers.countdown = setTimeout(tick, 250);
+    }
+    tick();
+  }
+  el.again.addEventListener('click', function () { showScreen('launch'); });
+
+  function startConfetti() {
+    var canvas = el.confetti;
+    var ctx = canvas.getContext ? canvas.getContext('2d') : null;
+    if (!ctx || !window.requestAnimationFrame) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    var colors = ['#E87722', '#D63A4C', '#173A45', '#10b981', '#f59e0b'];
+    var particles = [];
+    for (var i = 0; i < 150; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height - canvas.height,
+        size: Math.random() * 8 + 4,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        speedY: Math.random() * 3 + 2,
+        speedX: Math.random() * 2 - 1
+      });
+    }
+    function frame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(function (p) {
+        p.y += p.speedY;
+        p.x += p.speedX;
+        if (p.y > canvas.height) { p.y = -20; p.x = Math.random() * canvas.width; }
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      state.timers.confettiRaf = window.requestAnimationFrame(frame);
+    }
+    state.timers.confettiRaf = window.requestAnimationFrame(frame);
+    state.timers.confettiStop = setTimeout(stopConfetti, 6000);
+  }
+  function stopConfetti() {
+    if (state.timers.confettiRaf && window.cancelAnimationFrame) window.cancelAnimationFrame(state.timers.confettiRaf);
+    state.timers.confettiRaf = null;
+    if (state.timers.confettiStop) clearTimeout(state.timers.confettiStop);
+    state.timers.confettiStop = null;
+    var ctx = el.confetti.getContext ? el.confetti.getContext('2d') : null;
+    if (ctx) ctx.clearRect(0, 0, el.confetti.width, el.confetti.height);
+  }
+
+  // ---------- screens, timers, keyboard ----------
+  function clearTimers() {
+    ['idle', 'reveal', 'spin', 'countdown'].forEach(function (key) {
+      if (state.timers[key]) clearTimeout(state.timers[key]);
+      state.timers[key] = null;
+    });
+    stopConfetti();
+  }
+  function showScreen(name) {
+    clearTimers();
+    state.screen = name;
+    Object.keys(el.screens).forEach(function (key) { el.screens[key].hidden = key !== name; });
+    if (name === 'launch') {
+      state.quiz = null;
+      state.spinning = false;
+      el.wheel.classList.remove('spinning');
+      el.spin.disabled = false;
+      setWheelRotation(WHEEL.restRotation, 0); // snap back so the labels read upright
+      forceReflow();
+      setHint(DEFAULT_HINT);
+    }
+    var focusTarget = { launch: el.brand, quiz: el.quizArea, results: el.bandTitle }[name];
+    if (focusTarget && focusTarget.focus) {
+      try { focusTarget.focus({ preventScroll: true }); } catch (e) { focusTarget.focus(); }
+    }
+    if (window.scrollTo) window.scrollTo(0, 0);
+  }
+  function armIdle(ms) {
+    if (state.timers.idle) clearTimeout(state.timers.idle);
+    state.timers.idle = setTimeout(function () {
+      state.timers.idle = null;
+      if (state.screen === 'quiz') showScreen('launch');
+    }, ms);
+  }
+  document.addEventListener('pointerdown', function () {
+    if (state.screen === 'quiz') armIdle(TIMING.quizIdleMs);
+  }, { passive: true });
+  document.addEventListener('keydown', function (event) {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    if (event.key === 'Escape') {
+      if (state.screen !== 'launch') showScreen('launch');
+      return;
+    }
+    if (state.screen === 'quiz') {
+      armIdle(TIMING.quizIdleMs);
+      if (/^[1-4]$/.test(event.key)) answer(Number(event.key) - 1);
+    } else if (state.screen === 'launch' && (event.key === 's' || event.key === 'S')) {
+      spin();
+    }
+  });
+
+  // ---------- boot ----------
+  var activeSets = QUESTION_SETS.filter(function (s) { return ACTIVE_DIFFICULTIES.indexOf(s.difficulty) !== -1; });
+  var bankCount = activeSets.reduce(function (n, s) { return n + s.questions.length; }, 0);
+  el.foot.textContent = 'Brightpoint Community College · IT Trivia Challenge · offline edition · ' +
+    bankCount + ' questions in ' + activeSets.length + ' set' + (activeSets.length === 1 ? '' : 's');
+  renderWheel();
+  showScreen('launch');
+
+  // Exposed for the tests and the browser console; the game never reads this back.
+  window.TRIVIA = {
+    AREAS: AREAS, TIMING: TIMING, WHEEL: WHEEL, QUESTION_SETS: QUESTION_SETS, QUESTIONS_PER_QUIZ: QUESTIONS_PER_QUIZ,
+    geom: { mod: mod, polarToXY: polarToXY, wedgeStart: wedgeStart, wedgeMid: wedgeMid, wedgePath: wedgePath, labelPos: labelPos, areaIndexAtPointer: areaIndexAtPointer, pickWinner: pickWinner, targetRotation: targetRotation },
+    select: { shuffle: shuffle, buildPools: buildPools, newDeck: newDeck, deal: deal, prepareQuestion: prepareQuestion, isCorrect: isCorrect },
+    scoreBand: scoreBand, percent: percent,
+    state: state, pools: pools,
+    actions: { spin: spin, startArea: startArea, answer: answer, showScreen: showScreen }
+  };
+})();
+</script>
+</body>
+</html>

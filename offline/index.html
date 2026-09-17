@@ -27,9 +27,11 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
 .brand{margin:8px 0 4px;font-size:clamp(2rem,6vw,3.5rem);font-weight:900;letter-spacing:-.02em;text-align:center}
 .brand .accent{color:var(--orange)}
 .brand:focus{outline:none}
-.tagline{margin:0 0 10px;color:var(--slate-600);font-weight:600;text-align:center;font-size:clamp(.95rem,2.5vw,1.2rem)}
 .hint{margin:6px 0 16px;padding:8px 18px;background:#fff;border:3px solid var(--navy);border-radius:999px;box-shadow:4px 4px 0 rgba(23,58,69,.2);font-weight:800;text-align:center}
-.wheel-wrap{position:relative;width:min(88vw,62vh,540px);aspect-ratio:1;margin:10px auto 18px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+/* Wheel fills the height left under the title and hint (240px of chrome), never wider than 90vw, capped at 900px. */
+.wheel-wrap{position:relative;width:min(90vw,100vh - 240px,900px);width:min(90vw,100dvh - 240px,900px);aspect-ratio:1;margin:10px auto 18px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+/* The rotated square SVG has corners outside the wrapper; clipping them keeps the page from growing a scrollbar. */
+.wheel-clip{width:100%;height:100%;overflow:hidden}
 .wheel{display:block;width:100%;height:100%;transition:transform 0ms var(--spin-ease);will-change:transform}
 .wheel.spinning{pointer-events:none}
 .wheel .wedge{cursor:pointer}
@@ -46,7 +48,6 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
 @media(hover:hover){.spin-btn:not(:disabled):hover{background:var(--red);transform:translateY(-3px);box-shadow:6px 6px 0 var(--navy)}}
 .spin-btn:not(:disabled):active{transform:translateY(0);box-shadow:none}
 .spin-btn:disabled{background:var(--slate-400);box-shadow:none}
-.foot{margin:auto 0 0;padding-top:14px;font-size:.8rem;font-weight:700;color:var(--slate-400);text-align:center}
 
 /* ---------- ready ---------- */
 .ready{justify-content:center;background:var(--area-color,var(--navy));color:#fff;text-align:center}
@@ -136,16 +137,14 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
 <main>
   <section id="screen-launch" class="screen launch">
     <h1 class="brand" id="brand" tabindex="-1">IT Trivia <span class="accent">Challenge</span></h1>
-    <p class="tagline">Master the tech industry. Test your skills. Build your future.</p>
     <p class="hint" id="hint" aria-live="polite">Spin the wheel or tap an area to start a 5-question quiz</p>
     <div class="wheel-wrap">
       <div class="pointer" aria-hidden="true">
         <svg viewBox="0 0 40 46"><path d="M20 44 L3 6 Q20 -3 37 6 Z" fill="#173A45" stroke="#fff" stroke-width="3" stroke-linejoin="round"></path></svg>
       </div>
-      <svg id="wheel" class="wheel" viewBox="0 0 400 400" role="group" aria-label="Choose an area"></svg>
+      <div class="wheel-clip"><svg id="wheel" class="wheel" viewBox="0 0 400 400" role="group" aria-label="Choose an area"></svg></div>
       <div class="hub"><button id="spin" type="button" class="spin-btn" aria-label="Spin the wheel">SPIN</button></div>
     </div>
-    <p class="foot" id="foot">Brightpoint Community College &middot; IT Trivia Challenge &middot; offline edition</p>
   </section>
 
   <section id="screen-ready" class="screen ready" hidden>
@@ -155,7 +154,7 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
       <p class="ready-tagline" id="ready-tagline"></p>
       <div class="ready-ring">
         <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="52"></circle><circle class="ring-fill" id="ready-ring" cx="60" cy="60" r="52"></circle></svg>
-        <div class="ready-num" id="ready-num" role="timer" aria-label="Seconds until the first question">5</div>
+        <div class="ready-num" id="ready-num" role="timer" aria-label="Seconds until the first question">3</div>
       </div>
       <p class="ready-sub">First question coming up&hellip;</p>
     </div>
@@ -260,7 +259,7 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
     spinMs: 4200,        // wheel animation
     spinReducedMs: 600,  // with prefers-reduced-motion
     settleMs: 500,       // pause after the wheel stops before the quiz starts
-    readyMs: 5000,       // "Get ready" countdown before the first question (0 skips the screen)
+    readyMs: 3000,       // "Get ready" countdown before the first question (0 skips the screen)
     revealMs: 1500,      // show correct/wrong before advancing
     resultsIdleMs: 30000,// results screen auto-returns to the wheel
     quizIdleMs: 90000    // an abandoned quiz returns to the wheel
@@ -371,7 +370,7 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
   var el = {
     screens: { launch: $('screen-launch'), ready: $('screen-ready'), quiz: $('screen-quiz'), results: $('screen-results') },
     readyEmoji: $('ready-emoji'), readyArea: $('ready-area'), readyTagline: $('ready-tagline'), readyRing: $('ready-ring'), readyNum: $('ready-num'),
-    brand: $('brand'), hint: $('hint'), wheel: $('wheel'), spin: $('spin'), foot: $('foot'),
+    brand: $('brand'), hint: $('hint'), wheel: $('wheel'), spin: $('spin'),
     areaBar: $('area-bar'), quizEmoji: $('quiz-emoji'), quizArea: $('quiz-area'), progress: $('quiz-progress'), score: $('quiz-score'),
     qLabel: $('q-label'), qText: $('q-text'), options: $('options'), quit: $('quit'),
     confetti: $('confetti'), resultsCard: $('results-card'), resultsArea: $('results-area'), bandTitle: $('band-title'),
@@ -710,10 +709,6 @@ main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
   });
 
   // ---------- boot ----------
-  var activeSets = QUESTION_SETS.filter(function (s) { return ACTIVE_DIFFICULTIES.indexOf(s.difficulty) !== -1; });
-  var bankCount = activeSets.reduce(function (n, s) { return n + s.questions.length; }, 0);
-  el.foot.textContent = 'Brightpoint Community College · IT Trivia Challenge · offline edition · ' +
-    bankCount + ' questions in ' + activeSets.length + ' set' + (activeSets.length === 1 ? '' : 's');
   renderWheel();
   showScreen('launch');
 

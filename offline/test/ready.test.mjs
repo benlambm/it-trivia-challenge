@@ -9,7 +9,7 @@ test('choosing an area shows Get Ready with the area, tagline and count, then th
   const ctx = await loadPage();
   try {
     const { document, TRIVIA, click } = ctx;
-    assert.equal(TRIVIA.TIMING.readyMs, 5000, 'ships with a 5-second countdown');
+    assert.equal(TRIVIA.TIMING.readyMs, 3000, 'ships with a 3-second countdown');
     TRIVIA.TIMING.readyMs = 1500; // short enough to test in real time: shows 2, then 1, then the quiz
     click(wedge(document, 1));
     assert.ok(visible(document, 'screen-ready'));
@@ -43,12 +43,12 @@ test('choosing an area shows Get Ready with the area, tagline and count, then th
   }
 });
 
-test('the number never shows 0: a 5-second countdown starts at 5', async () => {
+test('the number never shows 0: a 3-second countdown starts at 3', async () => {
   const ctx = await loadPage();
   try {
     const { document, click } = ctx;
     click(wedge(document, 3));
-    assert.equal(document.getElementById('ready-num').textContent, '5');
+    assert.equal(document.getElementById('ready-num').textContent, '3');
     assert.equal(document.getElementById('ready-area').textContent, 'Cybersecurity');
     assert.equal(ctx.errors(), '');
   } finally {

@@ -8,7 +8,7 @@ from a spin wheel.
 
 1. Copy `index.html` anywhere (USB stick, laptop desktop, shared drive).
 2. Double-click it. It opens in the default browser from a `file://` URL and works fully offline.
-3. **SPIN** picks an area at random; tapping a slice picks that area directly. A 5-second **Get ready** screen
+3. **SPIN** picks an area at random; tapping a slice picks that area directly. A 3-second **Get ready** screen
    then shows the area and counts down before the first question.
 4. After 5 questions the score screen shows; **Spin again** (or 30 s of idling) returns to the wheel.
 
@@ -60,7 +60,7 @@ Everything adjustable is at the top of the inline script in `index.html`:
 |---|---|---|
 | `TIMING.spinMs` | 4200 | wheel animation length |
 | `TIMING.settleMs` | 500 | pause after the wheel stops before the quiz opens |
-| `TIMING.readyMs` | 5000 | "Get ready" countdown before the first question; `0` skips the screen |
+| `TIMING.readyMs` | 3000 | "Get ready" countdown before the first question; `0` skips the screen |
 | `TIMING.revealMs` | 1500 | how long the green/red answer reveal stays before the next question |
 | `TIMING.resultsIdleMs` | 30000 | score screen auto-returns to the wheel |
 | `TIMING.quizIdleMs` | 90000 | an abandoned quiz returns to the wheel |

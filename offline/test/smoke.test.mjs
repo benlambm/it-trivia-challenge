@@ -8,14 +8,17 @@ const options = (document) => [...document.querySelectorAll('#options .option')]
 test('page boots on the launch screen with five wedges and no console errors', async () => {
   const ctx = await loadPage();
   try {
-    const { document } = ctx;
+    const { document, TRIVIA } = ctx;
     assert.equal(document.querySelectorAll('#wheel .wedge').length, 5);
     assert.equal(document.querySelectorAll('#wheel .wedge[role="button"][tabindex="0"]').length, 5);
     assert.ok(visible(document, 'screen-launch'));
     assert.ok(!visible(document, 'screen-quiz'));
     assert.ok(!visible(document, 'screen-results'));
     assert.equal(document.getElementById('wheel').style.transform, 'rotate(-36deg)');
-    assert.match(document.getElementById('foot').textContent, /25 questions in 1 set/);
+    assert.equal(document.getElementById('foot'), null, 'no footer line');
+    assert.equal(document.querySelector('.tagline'), null, 'no tagline');
+    assert.ok(document.querySelector('.wheel-clip > #wheel'), 'wheel sits inside its overflow clip');
+    assert.equal(Object.values(TRIVIA.pools).reduce((n, pool) => n + pool.length, 0), 25, 'bank loaded');
     assert.equal(ctx.errors(), '');
   } finally {
     await ctx.close();

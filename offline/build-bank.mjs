@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// Validates every offline/sets/*.json and embeds them into offline/index.html.
-// Usage: node offline/build-bank.mjs          (rewrite the block in index.html)
-//        node offline/build-bank.mjs --check  (exit 1 if index.html is stale or a set is invalid)
+// Validates every offline/sets/*.json and embeds them into offline/index.html and offline/index-sound.html.
+// Usage: node offline/build-bank.mjs          (rewrite the block in both pages)
+//        node offline/build-bank.mjs --check  (exit 1 if a page is stale or a set is invalid)
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,7 +10,7 @@ import { AREAS, extractBlock, replaceBlock, serializeSets, validateBank, validat
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const setsDir = path.join(here, 'sets');
-const indexPath = path.join(here, 'index.html');
+const pagePaths = ['index.html', 'index-sound.html'].map((name) => path.join(here, name));
 const checkOnly = process.argv.includes('--check');
 const rel = (p) => path.relative(process.cwd(), p) || p;
 
@@ -45,31 +45,34 @@ warnings.push(...bank.warnings);
 warnings.forEach((w) => console.warn(`warning: ${w}`));
 if (errors.length) {
   errors.forEach((e) => console.error(`error: ${e}`));
-  console.error(`${errors.length} error(s); ${rel(indexPath)} not modified.`);
+  console.error(`${errors.length} error(s); no page modified.`);
   process.exit(1);
 }
 
-if (!fs.existsSync(indexPath)) {
-  console.error(`${rel(indexPath)} does not exist`);
+const missing = pagePaths.filter((p) => !fs.existsSync(p));
+if (missing.length) {
+  missing.forEach((p) => console.error(`${rel(p)} does not exist`));
   process.exit(1);
 }
 const body = serializeSets(sets);
-const html = fs.readFileSync(indexPath, 'utf8');
 
 if (checkOnly) {
-  if (extractBlock(html) === body) {
-    console.log(`${rel(indexPath)} bank is up to date (${sets.length} set(s), ${files.length} file(s)).`);
+  const stale = pagePaths.filter((p) => extractBlock(fs.readFileSync(p, 'utf8')) !== body);
+  if (!stale.length) {
+    console.log(`${pagePaths.map(rel).join(', ')}: bank is up to date (${sets.length} set(s), ${files.length} file(s)).`);
     process.exit(0);
   }
-  console.error(`${rel(indexPath)} bank is stale: run node offline/build-bank.mjs`);
+  stale.forEach((p) => console.error(`${rel(p)} bank is stale: run node offline/build-bank.mjs`));
   process.exit(1);
 }
 
-fs.writeFileSync(indexPath, replaceBlock(html, body));
-const roundTrip = JSON.parse(extractBlock(fs.readFileSync(indexPath, 'utf8')));
-if (!isDeepStrictEqual(roundTrip, sets)) {
-  console.error('round-trip mismatch after writing index.html; inspect the file');
-  process.exit(1);
+for (const pagePath of pagePaths) {
+  fs.writeFileSync(pagePath, replaceBlock(fs.readFileSync(pagePath, 'utf8'), body));
+  const roundTrip = JSON.parse(extractBlock(fs.readFileSync(pagePath, 'utf8')));
+  if (!isDeepStrictEqual(roundTrip, sets)) {
+    console.error(`round-trip mismatch after writing ${rel(pagePath)}; inspect the file`);
+    process.exit(1);
+  }
 }
 
 for (const set of sets) {
@@ -77,4 +80,4 @@ for (const set of sets) {
   console.log(`${set.id}  ${set.model}  ${set.generatedAt}  per-area ${counts}`);
 }
 const total = sets.reduce((sum, s) => sum + s.questions.length, 0);
-console.log(`Embedded ${sets.length} set(s), ${total} questions into ${rel(indexPath)}.`);
+console.log(`Embedded ${sets.length} set(s), ${total} questions into ${pagePaths.map(rel).join(' and ')}.`);

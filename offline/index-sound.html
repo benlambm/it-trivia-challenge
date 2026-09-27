@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>IT Trivia Challenge (Offline, with sound)</title>
+<style>
+:root{
+  --navy:#173A45;--orange:#E87722;--red:#D63A4C;--cyan:#0891b2;--purple:#9333ea;
+  --green:#10b981;--amber:#f59e0b;--bg:#f8fafc;
+  --slate-100:#f1f5f9;--slate-200:#e2e8f0;--slate-300:#cbd5e1;--slate-400:#94a3b8;--slate-600:#475569;
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --spin-ease:cubic-bezier(.17,.67,.12,.99);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--navy);font-family:var(--font);line-height:1.35;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+button:disabled{cursor:default}
+:focus-visible{outline:4px solid var(--amber);outline-offset:3px}
+main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+.screen{flex:1;display:flex;flex-direction:column;align-items:center;width:100%;padding:20px 16px 28px}
+
+/* ---------- launch ---------- */
+.brand{margin:8px 0 4px;font-size:clamp(2rem,6vw,3.5rem);font-weight:900;letter-spacing:-.02em;text-align:center}
+.brand .accent{color:var(--orange)}
+.brand:focus{outline:none}
+.hint{margin:6px 0 16px;padding:8px 18px;background:#fff;border:3px solid var(--navy);border-radius:999px;box-shadow:4px 4px 0 rgba(23,58,69,.2);font-weight:800;text-align:center}
+/* Wheel fills the height left under the title and hint (240px of chrome), never wider than 90vw, capped at 900px. */
+.wheel-wrap{position:relative;width:min(90vw,100vh - 240px,900px);width:min(90vw,100dvh - 240px,900px);aspect-ratio:1;margin:10px auto 18px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+/* The rotated square SVG has corners outside the wrapper; clipping them keeps the page from growing a scrollbar. */
+.wheel-clip{width:100%;height:100%;overflow:hidden}
+.wheel{display:block;width:100%;height:100%;transition:transform 0ms var(--spin-ease);will-change:transform}
+.wheel.spinning{pointer-events:none}
+.wheel .wedge{cursor:pointer}
+.wheel .wedge:focus{outline:none}
+.wheel .wedge path{transition:filter .15s}
+@media(hover:hover){.wheel .wedge:hover path{filter:brightness(1.12)}}
+.wheel .wedge:focus-visible path{stroke:var(--amber);stroke-width:8}
+.wedge-label{font-family:var(--font);font-weight:900;font-size:16px;fill:#fff;stroke:rgba(23,58,69,.6);stroke-width:3px;paint-order:stroke fill;stroke-linejoin:round;pointer-events:none}
+.wedge-emoji{font-size:26px;stroke:none}
+.pointer{position:absolute;top:-12px;left:50%;z-index:2;width:40px;height:46px;transform:translateX(-50%);filter:drop-shadow(0 3px 0 rgba(23,58,69,.35))}
+.pointer svg{display:block;width:100%;height:100%;transform-origin:50% 12%}
+.peg{fill:#fff;stroke:#173A45;stroke-width:2}
+.hub{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.spin-btn{pointer-events:auto;width:23%;aspect-ratio:1;padding:0;border-radius:50%;background:var(--orange);color:#fff;border:4px solid var(--navy);box-shadow:4px 4px 0 var(--navy);font-weight:900;font-size:clamp(.9rem,4.2vw,1.5rem);letter-spacing:.06em;transition:transform .12s,box-shadow .12s,background .12s}
+@media(hover:hover){.spin-btn:not(:disabled):hover{background:var(--red);transform:translateY(-3px);box-shadow:6px 6px 0 var(--navy)}}
+.spin-btn:not(:disabled):active{transform:translateY(0);box-shadow:none}
+.spin-btn:disabled{background:var(--slate-400);box-shadow:none}
+
+/* ---------- ready ---------- */
+.ready{justify-content:center;background:var(--area-color,var(--navy));color:#fff;text-align:center}
+.ready-card{width:100%;max-width:720px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.ready-eyebrow{margin:0;font-size:clamp(1rem,3vw,1.3rem);font-weight:800;letter-spacing:.3em;text-transform:uppercase;opacity:.85}
+.ready-title{display:flex;flex-direction:column;align-items:center;gap:6px}
+.ready-emoji{font-size:clamp(2.6rem,9vw,4.2rem);line-height:1}
+.ready-title h2{margin:0;font-size:clamp(2rem,7vw,3.6rem);font-weight:900;line-height:1.05;letter-spacing:-.02em;text-shadow:3px 3px 0 rgba(23,58,69,.35)}
+.ready-title h2:focus{outline:none}
+.ready-tagline{margin:0;padding:14px 22px;background:rgba(255,255,255,.14);border:3px solid rgba(255,255,255,.35);border-radius:18px;font-size:clamp(1.1rem,3.2vw,1.5rem);font-weight:700;font-style:italic;transform:rotate(-1deg)}
+.ready-ring{position:relative;width:clamp(130px,30vw,180px);aspect-ratio:1;margin:10px 0 4px}
+.ready-ring svg{display:block;width:100%;height:100%;transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:rgba(255,255,255,.25);stroke-width:10}
+.ring-fill{fill:none;stroke:#fff;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .1s linear}
+.ready-num{position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(3.4rem,12vw,5.5rem);font-weight:900;line-height:1;text-shadow:3px 3px 0 rgba(23,58,69,.35)}
+.ready-num.pop{animation:pop .5s ease-out}
+@keyframes pop{0%{transform:scale(1.45);opacity:.35}100%{transform:scale(1);opacity:1}}
+.ready-sub{margin:0;font-size:.9rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+
+/* ---------- quiz ---------- */
+.quiz{gap:18px}
+.area-bar{width:100%;max-width:900px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 18px;background:var(--area-color,var(--navy));color:#fff;border:4px solid var(--navy);border-radius:18px;box-shadow:6px 6px 0 rgba(23,58,69,.2)}
+.area-title{display:flex;align-items:center;gap:12px;min-width:0}
+.area-emoji{font-size:1.9rem;line-height:1}
+.area-title h2{margin:0;font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:900;line-height:1.1}
+.area-title h2:focus{outline:none}
+.meta{display:flex;align-items:center;gap:14px;font-weight:800;white-space:nowrap}
+.meta .sep{width:2px;height:26px;background:rgba(255,255,255,.4)}
+.meta .score{font-size:1.25rem;font-weight:900}
+.quiz-body{width:100%;max-width:900px;display:flex;flex-direction:column;gap:16px}
+.card{background:#fff;border:4px solid var(--navy);border-radius:24px;box-shadow:8px 8px 0 rgba(23,58,69,.2)}
+.question-card{padding:22px 20px 24px}
+.qlabel{display:inline-block;margin:0 0 12px;padding:4px 10px;background:var(--slate-200);color:var(--slate-600);border-radius:8px;font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.qtext{margin:0 0 20px;font-size:clamp(1.25rem,3.6vw,2rem);font-weight:900;line-height:1.25;overflow-wrap:anywhere}
+.options{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:768px){.options{grid-template-columns:1fr 1fr}}
+.option{display:flex;align-items:center;gap:14px;width:100%;min-height:64px;padding:14px 16px;background:#fff;color:var(--navy);text-align:left;border:4px solid var(--navy);border-radius:16px;box-shadow:4px 4px 0 var(--navy);font-weight:700;font-size:clamp(1rem,2.5vw,1.2rem);line-height:1.25;transition:transform .15s,box-shadow .15s,background .15s,color .15s,opacity .15s}
+.option kbd{flex:none;width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:var(--slate-100);border:2px solid var(--navy);font-family:inherit;font-weight:900;font-size:.95rem}
+.option-text{flex:1;overflow-wrap:anywhere}
+.option .mark{flex:none;font-weight:900;font-size:1.3rem;line-height:1}
+@media(hover:hover){
+  .option:not(:disabled):hover{transform:translateY(-3px);background:var(--orange);color:#fff;box-shadow:6px 6px 0 var(--navy)}
+  .option:not(:disabled):hover kbd{background:#fff;color:var(--navy)}
+}
+.option:not(:disabled):active{transform:translateY(0);box-shadow:none}
+.option.correct{background:var(--green);color:#fff;transform:scale(1.02)}
+.option.correct kbd{background:#fff;color:var(--green)}
+.option.wrong{background:var(--red);color:#fff}
+.option.wrong kbd{background:#fff;color:var(--red)}
+.option.faded{opacity:.55;background:var(--slate-100);border-color:var(--slate-300);color:var(--slate-400);box-shadow:none}
+.option.faded kbd{border-color:var(--slate-300);color:var(--slate-400)}
+.quiz-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.keys-hint{margin:0;font-size:.85rem;font-weight:700;color:var(--slate-400)}
+.link-btn{padding:8px 16px;background:#fff;border:3px solid var(--navy);border-radius:999px;box-shadow:3px 3px 0 var(--navy);font-weight:800}
+.link-btn:active{transform:translateY(1px);box-shadow:none}
+
+/* ---------- results ---------- */
+.results{position:relative;overflow:hidden;justify-content:center}
+#confetti{position:absolute;inset:0;z-index:0;width:100%;height:100%;pointer-events:none}
+.results-card{position:relative;z-index:1;width:100%;max-width:720px;overflow:hidden;box-shadow:12px 12px 0 rgba(23,58,69,.2)}
+.score-head{padding:28px 20px 24px;background:var(--area-color,var(--navy));color:#fff;text-align:center;border-bottom:4px solid var(--navy)}
+.eyebrow{margin:0 0 6px;font-weight:800;letter-spacing:.04em;font-size:clamp(.95rem,2.6vw,1.15rem);opacity:.95}
+.score-head h2{margin:0 0 10px;font-size:clamp(1.8rem,6vw,2.8rem);font-weight:900;line-height:1.1}
+.score-head h2:focus{outline:none}
+.pct{font-size:clamp(4rem,16vw,7rem);font-weight:900;line-height:1;letter-spacing:-.04em}
+.frac{margin:8px 0 0;font-size:clamp(1.2rem,3.5vw,1.6rem);font-weight:800}
+.results-body{display:flex;flex-direction:column;gap:18px;padding:22px 20px 24px}
+.band-msg{margin:0;text-align:center;font-size:clamp(1.1rem,3vw,1.4rem);font-weight:600;font-style:italic;color:var(--slate-600)}
+.pitch{display:flex;gap:16px;align-items:flex-start;padding:18px;background:#fff7ed;border:4px solid var(--orange);border-radius:18px}
+.bang{flex:none;width:48px;height:48px;display:grid;place-items:center;border-radius:50%;background:var(--orange);color:#fff;border:4px solid var(--navy);font-weight:900;font-size:1.5rem}
+.pitch h3{margin:0 0 6px;font-size:1.2rem;font-weight:900}
+.pitch p{margin:0;font-weight:500;line-height:1.45}
+.btn{display:block;width:100%;padding:18px;border:4px solid var(--navy);border-radius:16px;box-shadow:4px 4px 0 var(--navy);font-weight:900;font-size:1.3rem;transition:transform .12s,box-shadow .12s,background .12s}
+.btn.primary{background:var(--navy);color:#fff}
+@media(hover:hover){.btn:hover{transform:translateY(-3px);box-shadow:6px 6px 0 var(--navy)}.btn.primary:hover{background:var(--orange)}}
+.btn:active{transform:translateY(0);box-shadow:none}
+.auto-return{margin:0;text-align:center;font-size:.85rem;font-weight:700;color:var(--slate-400)}
+
+/* ---------- sound controls ---------- */
+.sound-controls{position:fixed;top:10px;right:10px;z-index:10;display:flex;gap:8px}
+.sound-btn{display:flex;align-items:center;gap:6px;min-height:44px;padding:6px 14px;background:#fff;color:var(--navy);border:3px solid var(--navy);border-radius:999px;box-shadow:3px 3px 0 rgba(23,58,69,.3);font-weight:800;font-size:.95rem}
+.sound-btn[aria-pressed="false"]{background:var(--slate-200);color:var(--slate-600);text-decoration:line-through}
+.sound-btn:active{transform:translateY(1px);box-shadow:none}
+.sound-icon{font-size:1.2rem;line-height:1;text-decoration:none}
+/* Keep the fixed buttons from covering the title, score bar or results header on narrower screens. */
+@media(max-width:1080px){.quiz,.results{padding-top:68px}}
+@media(max-width:640px){.launch{padding-top:64px}.sound-label{display:none}.sound-btn{padding:6px 10px}}
+
+@media(prefers-reduced-motion:reduce){
+  .option,.btn,.spin-btn,.wheel .wedge path{transition:none}
+  .btn:hover,.option:not(:disabled):hover,.spin-btn:not(:disabled):hover{transform:none}
+  .ready-num.pop{animation:none}.ring-fill{transition:none}
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="sound-controls">
+    <button id="sound-toggle" type="button" class="sound-btn" aria-pressed="true" aria-label="Sound effects" title="Sound effects (M)"><span class="sound-icon" id="sound-icon" aria-hidden="true">🔊</span><span class="sound-label">Sound</span></button>
+    <button id="voice-toggle" type="button" class="sound-btn" aria-pressed="true" aria-label="Announcer voice" title="Announcer voice (V)"><span class="sound-icon" aria-hidden="true">🗣️</span><span class="sound-label">Announcer</span></button>
+  </div>
+  <section id="screen-launch" class="screen launch">
+    <h1 class="brand" id="brand" tabindex="-1">IT Trivia <span class="accent">Challenge</span></h1>
+    <p class="hint" id="hint" aria-live="polite">Spin the wheel or tap an area to start a 5-question quiz</p>
+    <div class="wheel-wrap">
+      <div class="pointer" aria-hidden="true">
+        <svg viewBox="0 0 40 46"><path d="M20 44 L3 6 Q20 -3 37 6 Z" fill="#173A45" stroke="#fff" stroke-width="3" stroke-linejoin="round"></path></svg>
+      </div>
+      <div class="wheel-clip"><svg id="wheel" class="wheel" viewBox="0 0 400 400" role="group" aria-label="Choose an area"></svg></div>
+      <div class="hub"><button id="spin" type="button" class="spin-btn" aria-label="Spin the wheel">SPIN</button></div>
+    </div>
+  </section>
+
+  <section id="screen-ready" class="screen ready" hidden>
+    <div class="ready-card">
+      <p class="ready-eyebrow">Get ready</p>
+      <div class="ready-title"><span class="ready-emoji" id="ready-emoji" aria-hidden="true"></span><h2 id="ready-area" tabindex="-1"></h2></div>
+      <p class="ready-tagline" id="ready-tagline"></p>
+      <div class="ready-ring">
+        <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="52"></circle><circle class="ring-fill" id="ready-ring" cx="60" cy="60" r="52"></circle></svg>
+        <div class="ready-num" id="ready-num" role="timer" aria-label="Seconds until the first question">3</div>
+      </div>
+      <p class="ready-sub">First question coming up&hellip;</p>
+    </div>
+  </section>
+
+  <section id="screen-quiz" class="screen quiz" hidden>
+    <header class="area-bar" id="area-bar">
+      <div class="area-title"><span class="area-emoji" id="quiz-emoji" aria-hidden="true"></span><h2 id="quiz-area" tabindex="-1"></h2></div>
+      <div class="meta">
+        <span id="quiz-progress" aria-live="polite"></span>
+        <span class="sep" aria-hidden="true"></span>
+        <span class="score" id="quiz-score" aria-live="polite"></span>
+      </div>
+    </header>
+    <div class="quiz-body">
+      <article class="card question-card">
+        <p class="qlabel" id="q-label"></p>
+        <h3 class="qtext" id="q-text"></h3>
+        <div id="options" class="options"></div>
+      </article>
+      <div class="quiz-foot">
+        <p class="keys-hint">Keyboard: press 1&ndash;4 to answer, Esc to leave, M to mute</p>
+        <button id="quit" type="button" class="link-btn">&larr; Back to the wheel</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-results" class="screen results" hidden>
+    <canvas id="confetti" aria-hidden="true"></canvas>
+    <article class="card results-card" id="results-card">
+      <div class="score-head">
+        <p class="eyebrow" id="results-area"></p>
+        <h2 id="band-title" tabindex="-1"></h2>
+        <div class="pct" id="pct"></div>
+        <p class="frac" id="frac"></p>
+      </div>
+      <div class="results-body">
+        <p class="band-msg" id="band-msg"></p>
+        <aside class="pitch">
+          <div class="bang" aria-hidden="true">!</div>
+          <div>
+            <h3>Your Future in IT Starts Here</h3>
+            <p>Brightpoint Community College offers amazing pathways into IT careers. Whether you got a perfect score or are just starting, there's a class for you!</p>
+          </div>
+        </aside>
+        <button id="again" type="button" class="btn primary">Spin again</button>
+        <p class="auto-return" id="auto-return"></p>
+      </div>
+    </article>
+  </section>
+</main>
+
+<!-- Question bank. Generated by offline/build-bank.mjs from offline/sets/*.json; do not hand-edit. -->
+<script type="application/json" id="question-sets">
+[
+  {"id":"easier-001","difficulty":"easier","model":"googleai/gemini-3.7-flash","generatedAt":"2026-09-17T13:36:43.010Z","source":"https://trivia.benlamb.net/api/questions","questions":[
+    {"category":"Networking \u0026 Internet","text":"What device is primarily used to connect a home network to the internet?","options":["Router","Monitor","Flash drive","Power supply"],"correctAnswer":"Router"},
+    {"category":"Networking \u0026 Internet","text":"Which system translates a website name such as example.com into the numeric address computers use to find it?","options":["DNS (Domain Name System)","VPN (Virtual Private Network)","URL (Uniform Resource Locator)","ISP (Internet Service Provider)"],"correctAnswer":"DNS (Domain Name System)"},
+    {"category":"Networking \u0026 Internet","text":"What is the unique numerical label assigned to each device connected to a computer network?","options":["IP address","ZIP code","Serial key","Bar code"],"correctAnswer":"IP address"},
+    {"category":"Networking \u0026 Internet","text":"Which technology allows devices to connect to a local network without physical cables?","options":["Wi-Fi","Ethernet","HDMI","VGA"],"correctAnswer":"Wi-Fi"},
+    {"category":"Networking \u0026 Internet","text":"What is the term for sending a file from your device to a remote server?","options":["Downloading","Uploading","Streaming","Browsing"],"correctAnswer":"Uploading"},
+    {"category":"Artificial Intelligence","text":"When an AI chatbot confidently states something that is false or made up, what is that mistake called?","options":["Hallucination","Syntax error","Cache miss","Overclocking"],"correctAnswer":"Hallucination"},
+    {"category":"Artificial Intelligence","text":"Deep learning is a kind of machine learning built from many stacked layers of which brain-inspired structure?","options":["Neural networks","Decision trees","Logic gates","Hash tables"],"correctAnswer":"Neural networks"},
+    {"category":"Artificial Intelligence","text":"Which branch of AI focuses on teaching computers to learn from data without being explicitly programmed?","options":["Machine Learning","Web Hosting","Data Compression","Hardware Design"],"correctAnswer":"Machine Learning"},
+    {"category":"Artificial Intelligence","text":"Which branch of AI lets a phone unlock by recognizing your face and lets a self-driving car spot pedestrians?","options":["Computer vision","Natural language processing","Speech recognition","Data mining"],"correctAnswer":"Computer vision"},
+    {"category":"Artificial Intelligence","text":"What type of AI can create brand new content like essays, images, and music?","options":["Generative AI","Static AI","Storage AI","Network AI"],"correctAnswer":"Generative AI"},
+    {"category":"Program and Database Development","text":"What is an error or mistake in computer code called?","options":["Bug","Patch","Pixel","Script"],"correctAnswer":"Bug"},
+    {"category":"Program and Database Development","text":"What is a structured collection of related data stored electronically called?","options":["Database","Compiler","Firewall","Motherboard"],"correctAnswer":"Database"},
+    {"category":"Program and Database Development","text":"Which standard language is commonly used to manage and query relational databases?","options":["SQL","HTML","CSS","JSON"],"correctAnswer":"SQL"},
+    {"category":"Program and Database Development","text":"In computer programming, what is used to store a value that can change during execution?","options":["Variable","Constant","Comment","Header"],"correctAnswer":"Variable"},
+    {"category":"Program and Database Development","text":"Which programming language is named after a type of snake and is known for easy readability?","options":["Python","Cobol","Ruby","Swift"],"correctAnswer":"Python"},
+    {"category":"Cybersecurity","text":"What is a fraudulent email trying to trick you into revealing personal passwords called?","options":["Phishing","Streaming","Buffering","Backing up"],"correctAnswer":"Phishing"},
+    {"category":"Cybersecurity","text":"What security method requires a password plus a temporary phone code to log in?","options":["Two-factor authentication","Single sign-on","Data compression","Private browsing"],"correctAnswer":"Two-factor authentication"},
+    {"category":"Cybersecurity","text":"What general term describes harmful software like viruses, worms, and spyware?","options":["Malware","Firmware","Shareware","Hardware"],"correctAnswer":"Malware"},
+    {"category":"Cybersecurity","text":"What makes a password the strongest against unauthorized guessing?","options":["A long mix of characters","Your birth year","The word password","Your pet's name"],"correctAnswer":"A long mix of characters"},
+    {"category":"Cybersecurity","text":"What software or hardware tool monitors and filters incoming and outgoing network traffic?","options":["Firewall","Hard drive","Keyboard","Projector"],"correctAnswer":"Firewall"},
+    {"category":"IT Operations and Support","text":"A desktop computer monitor remains completely black when turned on. What is the BEST first step?","options":["Check cable connections","Buy a new monitor","Reinstall Windows","Replace the processor"],"correctAnswer":"Check cable connections"},
+    {"category":"IT Operations and Support","text":"A user complains that a printer will not print their document. What should you check first?","options":["Paper and power status","Network server hardware","Printer warranty dates","Computer motherboard"],"correctAnswer":"Paper and power status"},
+    {"category":"IT Operations and Support","text":"An application on a computer freezes and will not respond to clicks. What is the BEST first step?","options":["Force close the application","Format the hard drive","Unplug the computer immediately","Delete all saved files"],"correctAnswer":"Force close the application"},
+    {"category":"IT Operations and Support","text":"A laptop suddenly loses Wi-Fi connection at home. What is a recommended first troubleshooting step?","options":["Restart the wireless router","Call an electrician","Replace the laptop battery","Reinstall the operating system"],"correctAnswer":"Restart the wireless router"},
+    {"category":"IT Operations and Support","text":"A user cannot hear any sound from a desktop computer. What should you check first?","options":["Volume and mute settings","Internal power supply","Monitor screen brightness","Keyboard language layout"],"correctAnswer":"Volume and mute settings"}
+  ]}
+]
+</script>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- configuration ----------
+  // name must equal the API "category" string exactly; lines is display-only (wheel label).
+  var AREAS = [
+    { key: 'net',   name: 'Networking & Internet',            lines: ['Networking', '& Internet'],   emoji: '🌐', color: '#0891b2', tagline: 'Connecting the world at light speed!' },
+    { key: 'ai',    name: 'Artificial Intelligence',          lines: ['Artificial', 'Intelligence'], emoji: '🤖', color: '#9333ea', tagline: 'Unlocking the power of machine minds!' },
+    { key: 'dev',   name: 'Program and Database Development', lines: ['Programming', '& Databases'], emoji: '💻', color: '#E87722', tagline: 'Building the future, one line of code at a time!' },
+    { key: 'cyber', name: 'Cybersecurity',                    lines: ['Cyber', 'Security'],          emoji: '🛡️', color: '#D63A4C', tagline: 'Defending the digital frontier!' },
+    { key: 'ops',   name: 'IT Operations and Support',        lines: ['IT Ops', '& Support'],        emoji: '🔧', color: '#173A45', tagline: 'Solving real-world tech mysteries!' }
+  ];
+  var ACTIVE_DIFFICULTIES = ['easier']; // sets with other difficulties stay embedded but unused
+  var QUESTIONS_PER_QUIZ = 5;
+  var TIMING = {
+    spinMs: 4200,        // wheel animation
+    spinReducedMs: 600,  // with prefers-reduced-motion
+    settleMs: 500,       // pause after the wheel stops before the quiz starts
+    readyMs: 3000,       // "Get ready" countdown before the first question (0 skips the screen)
+    revealMs: 1500,      // show correct/wrong before advancing
+    resultsIdleMs: 30000,// results screen auto-returns to the wheel
+    quizIdleMs: 90000    // an abandoned quiz returns to the wheel
+  };
+  var WHEEL = { cx: 200, cy: 200, r: 190, restRotation: -36, labelRadius: 0.6, pegs: 20 };
+  var SOUND = {
+    drive: 2.4,          // gain into the compressor: higher is louder and punchier (compressor keeps it from clipping)
+    output: 1,           // final volume, 0..1
+    announcer: true,     // speak area names and scores with the browser's built-in voice
+    voiceDelayMs: 900    // let the results fanfare land before the announcer speaks
+  };
+  var DEFAULT_HINT = 'Spin the wheel or tap an area to start a 5-question quiz';
+
+  var QUESTION_SETS = JSON.parse(document.getElementById('question-sets').textContent);
+
+  // ---------- pure: geometry (degrees clockwise from 12 o'clock; screen y points down) ----------
+  var SEG = AREAS.length;
+  var SEG_DEG = 360 / SEG;
+  function mod(a, n) { return ((a % n) + n) % n; }
+  function toRad(deg) { return deg * Math.PI / 180; }
+  function fmt(n) { return Math.round(n * 1000) / 1000; }
+  function polarToXY(cx, cy, r, deg) { return { x: cx + r * Math.sin(toRad(deg)), y: cy - r * Math.cos(toRad(deg)) }; }
+  function wedgeStart(i) { return i * SEG_DEG; }
+  function wedgeMid(i) { return i * SEG_DEG + SEG_DEG / 2; }
+  function wedgePath(cx, cy, r, i) {
+    var a = polarToXY(cx, cy, r, wedgeStart(i));
+    var b = polarToXY(cx, cy, r, wedgeStart(i) + SEG_DEG);
+    return 'M ' + cx + ' ' + cy + ' L ' + fmt(a.x) + ' ' + fmt(a.y) + ' A ' + r + ' ' + r + ' 0 0 1 ' + fmt(b.x) + ' ' + fmt(b.y) + ' Z';
+  }
+  function labelPos(cx, cy, r, i, k) { return polarToXY(cx, cy, r * (k == null ? WHEEL.labelRadius : k), wedgeMid(i)); }
+  function areaIndexAtPointer(rotation) { return Math.floor(mod(-rotation, 360) / SEG_DEG); }
+  function pickWinner(rand) { return Math.floor((rand || Math.random)() * SEG); }
+  // Absolute rotation that puts wedge `winner` under the fixed pointer after `turns` full turns.
+  function targetRotation(current, winner, opts) {
+    opts = opts || {};
+    var rand = opts.rand || Math.random;
+    var turnsMin = opts.turnsMin == null ? 4 : opts.turnsMin;
+    var turnsMax = opts.turnsMax == null ? 6 : opts.turnsMax;
+    var jitterMax = opts.jitterMax == null ? 28 : opts.jitterMax;
+    var turns = turnsMin + Math.floor(rand() * (turnsMax - turnsMin + 1));
+    var jitter = (rand() * 2 - 1) * jitterMax;
+    var rho = mod(-(wedgeMid(winner) + jitter), 360);
+    return current + 360 * turns + mod(rho - current, 360);
+  }
+
+  // ---------- pure: question selection ----------
+  function shuffle(arr, rand) {
+    rand = rand || Math.random;
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rand() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function buildPools(sets, areas, activeDifficulties) {
+    var pools = {};
+    areas.forEach(function (area) { pools[area.name] = []; });
+    sets.forEach(function (set) {
+      if (activeDifficulties.indexOf(set.difficulty) === -1) return;
+      set.questions.forEach(function (q, i) {
+        if (!pools[q.category]) return;
+        pools[q.category].push({ id: set.id + '#' + i, category: q.category, text: q.text, options: q.options.slice(), correctAnswer: q.correctAnswer });
+      });
+    });
+    return pools;
+  }
+  function newDeck(pool, rand) { return { all: pool.slice(), remaining: shuffle(pool, rand) }; }
+  // Deals n questions; refills from the full pool (minus what was just dealt) when the deck runs dry,
+  // so every question is seen before any repeats. With a 5-question pool this is "all 5, random order".
+  function deal(deck, n, rand) {
+    var remaining = deck.remaining.slice();
+    var dealt = [];
+    while (dealt.length < n && deck.all.length) {
+      if (!remaining.length) {
+        var dealtIds = {};
+        dealt.forEach(function (q) { dealtIds[q.id] = true; });
+        remaining = shuffle(deck.all.filter(function (q) { return !dealtIds[q.id]; }), rand);
+        if (!remaining.length) break;
+      }
+      dealt.push(remaining.shift());
+    }
+    return { dealt: dealt, deck: { all: deck.all, remaining: remaining } };
+  }
+  function prepareQuestion(q, rand) {
+    return { id: q.id, category: q.category, text: q.text, options: shuffle(q.options, rand), correctAnswer: q.correctAnswer };
+  }
+  function isCorrect(q, option) { return option === q.correctAnswer; }
+
+  // ---------- pure: results ----------
+  function scoreBand(score, total) {
+    var ratio = total ? score / total : 0;
+    var band;
+    if (ratio >= 1) band = ['Perfect score!', 'You crushed it. Future IT pro spotted.'];
+    else if (ratio >= 0.8) band = ['Excellent!', 'Just one away from perfect.'];
+    else if (ratio >= 0.6) band = ['Nice work!', 'You know your tech.'];
+    else if (ratio >= 0.4) band = ['Good try!', 'Every expert started somewhere.'];
+    else band = ['Thanks for playing!', 'Curiosity is the first step into IT.'];
+    return { title: band[0], message: band[1], celebrate: ratio > 0.5 };
+  }
+  function percent(score, total) { return total ? Math.round(score / total * 100) : 0; }
+
+  // ---------- sound: synthesized with Web Audio (no audio files) plus the browser's speech voice ----------
+  var sound = (function () {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    var speech = window.speechSynthesis && window.SpeechSynthesisUtterance ? window.speechSynthesis : null;
+    var ctx = null, bus = null, noiseBuf = null;
+    var on = { fx: true, voice: SOUND.announcer };
+
+    // Browsers only allow audio after a user gesture, so this runs on every pointerdown/keydown.
+    function unlock() {
+      if (!AC) return;
+      if (!ctx) {
+        try { ctx = new AC(); } catch (e) { AC = null; return; }
+        var drive = ctx.createGain();
+        drive.gain.value = SOUND.drive;
+        var comp = ctx.createDynamicsCompressor();
+        comp.threshold.value = -20; comp.knee.value = 4; comp.ratio.value = 12;
+        comp.attack.value = 0.001; comp.release.value = 0.12;
+        var out = ctx.createGain();
+        out.gain.value = SOUND.output;
+        drive.connect(comp); comp.connect(out); out.connect(ctx.destination);
+        bus = drive;
+        noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+        var data = noiseBuf.getChannelData(0);
+        for (var i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+        // iOS/iPadOS 17+: play through the ringer/silent switch like a media app.
+        try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+      }
+      if (ctx.state === 'suspended' && ctx.resume) ctx.resume();
+    }
+    function play(fn) {
+      if (!on.fx || !ctx) return;
+      try { fn(); } catch (e) { warn(e); }
+    }
+    // Sound must never break the game, but a broken sound should still be visible in the console.
+    function warn(e) { if (window.console && console.warn) console.warn('sound failed:', e && e.message ? e.message : e); }
+    function midi(n) { return 440 * Math.pow(2, (n - 69) / 12); }
+
+    // One enveloped oscillator note. o: type, gain, attack, hold, to (glide target Hz), glide, lowpass, detune, vibrato (Hz).
+    function tone(freq, at, dur, o) {
+      o = o || {};
+      var t = ctx.currentTime + (at || 0);
+      var osc = ctx.createOscillator();
+      var g = ctx.createGain();
+      var peak = o.gain == null ? 0.5 : o.gain;
+      var attack = o.attack || 0.005;
+      osc.type = o.type || 'square';
+      osc.frequency.setValueAtTime(freq, t);
+      if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t + (o.glide || dur));
+      if (o.detune) osc.detune.value = o.detune;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + attack);
+      if (o.hold) g.gain.setValueAtTime(peak, t + attack + o.hold);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      var node = osc;
+      if (o.lowpass) {
+        var f = ctx.createBiquadFilter();
+        f.type = 'lowpass'; f.frequency.value = o.lowpass;
+        osc.connect(f); node = f;
+      }
+      if (o.vibrato) {
+        var lfo = ctx.createOscillator(), depth = ctx.createGain();
+        lfo.frequency.value = o.vibrato; depth.gain.value = freq * 0.03;
+        lfo.connect(depth); depth.connect(osc.frequency);
+        lfo.start(t); lfo.stop(t + dur + 0.05);
+      }
+      node.connect(g); g.connect(bus);
+      osc.start(t); osc.stop(t + dur + 0.05);
+    }
+    // One enveloped burst of filtered white noise. o: filter, freq, to (sweep target Hz), q, gain, attack.
+    function noise(at, dur, o) {
+      o = o || {};
+      var t = ctx.currentTime + (at || 0);
+      var src = ctx.createBufferSource();
+      src.buffer = noiseBuf; src.loop = true;
+      var f = ctx.createBiquadFilter();
+      f.type = o.filter || 'bandpass'; f.Q.value = o.q || 1;
+      f.frequency.setValueAtTime(o.freq || 2000, t);
+      if (o.to) f.frequency.exponentialRampToValueAtTime(o.to, t + dur);
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(o.gain == null ? 0.5 : o.gain, t + (o.attack || 0.003));
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f); f.connect(g); g.connect(bus);
+      src.start(t, Math.random() * 0.5); src.stop(t + dur + 0.05);
+    }
+    function brass(m, at, dur, gain) {
+      var hold = dur * 0.6;
+      tone(midi(m), at, dur, { type: 'sawtooth', gain: gain || 0.4, attack: 0.02, hold: hold, lowpass: 2600 });
+      tone(midi(m), at, dur, { type: 'square', gain: (gain || 0.4) * 0.5, attack: 0.02, hold: hold, lowpass: 2600, detune: 8 });
+    }
+    function applause(start, dur, claps) {
+      noise(start, dur, { freq: 1800, q: 0.5, gain: 0.3, attack: 0.25 });
+      for (var i = 0; i < claps; i++) {
+        noise(start + dur * Math.pow(Math.random(), 1.6), 0.02 + Math.random() * 0.03, { freq: 900 + Math.random() * 2200, q: 1.5, gain: 0.5 + Math.random() * 0.6 });
+      }
+    }
+
+    var fx = {
+      // Wheel: a peg clicking past the pointer.
+      tick: function () {
+        noise(0, 0.04, { freq: 3200, q: 3, gain: 1.3 });
+        tone(1400 + Math.random() * 200, 0, 0.035, { type: 'square', to: 650, gain: 0.4 });
+      },
+      spinStart: function () {
+        tone(140, 0, 0.5, { type: 'sawtooth', to: 900, gain: 0.45, lowpass: 3000 });
+        noise(0, 0.55, { freq: 400, to: 4500, q: 0.8, gain: 0.7, attack: 0.12 });
+      },
+      land: function () {
+        [72, 76, 79, 84].forEach(function (m, i) { tone(midi(m), i * 0.07, 0.25, { type: 'square', gain: 0.35 }); });
+        tone(midi(96), 0.28, 1.4, { type: 'triangle', gain: 0.9 });
+        tone(midi(103), 0.28, 1.0, { type: 'sine', gain: 0.45 });
+      },
+      pick: function () {
+        tone(660, 0, 0.12, { type: 'square', to: 1320, gain: 0.45 });
+        tone(1320, 0.1, 0.35, { type: 'triangle', gain: 0.6 });
+      },
+      // Get Ready countdown beeps, then a higher GO blast (race-start lights).
+      count: function () { tone(880, 0, 0.22, { type: 'square', gain: 0.6, hold: 0.12 }); },
+      go: function () {
+        tone(1760, 0, 0.6, { type: 'square', gain: 0.5, hold: 0.35 });
+        tone(880, 0, 0.6, { type: 'sawtooth', gain: 0.4, hold: 0.35 });
+      },
+      question: function () { tone(420, 0, 0.16, { type: 'triangle', to: 900, gain: 0.7 }); },
+      correct: function () {
+        tone(midi(83), 0, 0.16, { type: 'square', gain: 0.45 });
+        tone(midi(88), 0.11, 0.6, { type: 'square', gain: 0.45, hold: 0.1 });
+        tone(midi(100), 0.11, 0.8, { type: 'triangle', gain: 0.6 });
+        noise(0.11, 0.4, { filter: 'highpass', freq: 7000, gain: 0.3 });
+      },
+      // Game-show buzzer.
+      wrong: function () {
+        tone(110, 0, 0.75, { type: 'sawtooth', gain: 0.7, hold: 0.55, lowpass: 1800 });
+        tone(116.5, 0, 0.75, { type: 'sawtooth', gain: 0.7, hold: 0.55, lowpass: 1800 });
+        tone(55, 0, 0.75, { type: 'square', gain: 0.5, hold: 0.55 });
+      },
+      fanfare: function () {
+        brass(67, 0, 0.14); brass(72, 0.12, 0.14); brass(76, 0.24, 0.14); brass(79, 0.36, 0.34);
+        brass(76, 0.72, 0.16); brass(79, 0.88, 1.2, 0.5);
+        noise(0.88, 1.6, { filter: 'highpass', freq: 6000, gain: 0.45 });
+        tone(midi(43), 0.88, 1.2, { type: 'triangle', gain: 0.8 });
+        applause(0.9, 3, 180);
+      },
+      jingle: function () {
+        [72, 76, 79].forEach(function (m, i) { brass(m, i * 0.1, 0.14); });
+        brass(84, 0.3, 0.8, 0.5);
+        applause(0, 1.8, 90);
+      },
+      tada: function () { brass(67, 0, 0.16); brass(72, 0.16, 0.7, 0.5); },
+      sadTrombone: function () {
+        [58, 57, 56].forEach(function (m, i) { tone(midi(m), i * 0.45, 0.42, { type: 'sawtooth', gain: 0.6, attack: 0.03, hold: 0.25, lowpass: 1200, to: midi(m) * 0.97 }); });
+        tone(midi(55), 1.35, 1.3, { type: 'sawtooth', gain: 0.6, attack: 0.03, hold: 0.9, lowpass: 1200, vibrato: 6 });
+      },
+      whoosh: function () { noise(0, 0.35, { freq: 3500, to: 300, q: 1.2, gain: 0.8, attack: 0.03 }); },
+      whoop: function () { noise(0, 0.3, { freq: 400, to: 4000, q: 1.2, gain: 0.8, attack: 0.03 }); tone(500, 0, 0.25, { type: 'triangle', to: 1500, gain: 0.5 }); }
+    };
+
+    // Continuous whir while the wheel turns; loudness and pitch follow its speed.
+    function whir() {
+      var silent = { set: function () {}, stop: function () {} };
+      if (!on.fx || !ctx) return silent;
+      var src, f, g, stopped = false;
+      try {
+        src = ctx.createBufferSource(); f = ctx.createBiquadFilter(); g = ctx.createGain();
+        src.buffer = noiseBuf; src.loop = true;
+        f.type = 'bandpass'; f.Q.value = 1.4; f.frequency.value = 300;
+        g.gain.value = 0.0001;
+        src.connect(f); f.connect(g); g.connect(bus);
+        src.start();
+      } catch (e) { warn(e); return silent; }
+      return {
+        set: function (degPerSec) {
+          if (stopped) return;
+          var s = Math.min(1, degPerSec / 1800);
+          try {
+            f.frequency.setTargetAtTime(250 + 2600 * s, ctx.currentTime, 0.03);
+            g.gain.setTargetAtTime(0.0001 + 0.55 * s, ctx.currentTime, 0.03);
+          } catch (e) { warn(e); }
+        },
+        stop: function () {
+          if (stopped) return;
+          stopped = true;
+          try {
+            g.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.05);
+            src.stop(ctx.currentTime + 0.3);
+          } catch (e) { warn(e); }
+        }
+      };
+    }
+
+    function say(text) {
+      if (!on.voice || !speech) return;
+      try {
+        speech.cancel();
+        var u = new window.SpeechSynthesisUtterance(text.replace(/&/g, 'and'));
+        u.lang = 'en-US'; u.volume = 1; u.rate = 1.05; u.pitch = 1.1;
+        speech.speak(u);
+      } catch (e) {}
+    }
+    function hush() { if (speech) try { speech.cancel(); } catch (e) {} }
+
+    var api = {
+      unlock: unlock, whir: whir, say: say, hush: hush,
+      supported: { fx: !!AC, voice: !!speech },
+      isOn: function (kind) { return on[kind]; },
+      setOn: function (kind, value) { on[kind] = !!value; if (kind === 'voice' && !value) hush(); }
+    };
+    Object.keys(fx).forEach(function (name) { api[name] = function () { play(fx[name]); }; });
+    return api;
+  })();
+
+  // ---------- state and DOM ----------
+  var pools = buildPools(QUESTION_SETS, AREAS, ACTIVE_DIFFICULTIES);
+  var state = {
+    screen: 'launch',
+    wheelRotation: WHEEL.restRotation,
+    spinning: false,
+    decks: {},
+    quiz: null,
+    timers: { idle: null, ready: null, reveal: null, spin: null, countdown: null, voice: null, confettiStop: null, confettiRaf: null },
+    spinTrack: null
+  };
+  function $(id) { return document.getElementById(id); }
+  var el = {
+    screens: { launch: $('screen-launch'), ready: $('screen-ready'), quiz: $('screen-quiz'), results: $('screen-results') },
+    readyEmoji: $('ready-emoji'), readyArea: $('ready-area'), readyTagline: $('ready-tagline'), readyRing: $('ready-ring'), readyNum: $('ready-num'),
+    brand: $('brand'), hint: $('hint'), wheel: $('wheel'), spin: $('spin'),
+    areaBar: $('area-bar'), quizEmoji: $('quiz-emoji'), quizArea: $('quiz-area'), progress: $('quiz-progress'), score: $('quiz-score'),
+    qLabel: $('q-label'), qText: $('q-text'), options: $('options'), quit: $('quit'),
+    confetti: $('confetti'), resultsCard: $('results-card'), resultsArea: $('results-area'), bandTitle: $('band-title'),
+    pct: $('pct'), frac: $('frac'), bandMsg: $('band-msg'), again: $('again'), autoReturn: $('auto-return'),
+    pointerSvg: document.querySelector('.pointer svg'), soundToggle: $('sound-toggle'), soundIcon: $('sound-icon'), voiceToggle: $('voice-toggle')
+  };
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  function setHint(text) { el.hint.textContent = text; }
+
+  // ---------- wheel ----------
+  function renderWheel() {
+    var cx = WHEEL.cx, cy = WHEEL.cy, r = WHEEL.r;
+    var parts = [];
+    AREAS.forEach(function (area, i) {
+      var p = labelPos(cx, cy, r, i);
+      var x = fmt(p.x), y = fmt(p.y);
+      var tspans = '<tspan class="wedge-emoji" x="' + x + '" dy="-1.15em">' + area.emoji + '</tspan>';
+      area.lines.forEach(function (line, li) {
+        tspans += '<tspan x="' + x + '" dy="' + (li === 0 ? '1.25em' : '1.15em') + '">' + esc(line) + '</tspan>';
+      });
+      parts.push(
+        '<g class="wedge" role="button" tabindex="0" data-area-index="' + i + '" aria-label="Play ' + esc(area.name) + '">' +
+          '<path d="' + wedgePath(cx, cy, r, i) + '" fill="' + area.color + '" stroke="#fff" stroke-width="4" stroke-linejoin="round"></path>' +
+          // Labels are rotated by -restRotation so they read horizontally while the wheel is at rest.
+          '<text class="wedge-label" x="' + x + '" y="' + y + '" text-anchor="middle" transform="rotate(' + (-WHEEL.restRotation) + ' ' + x + ' ' + y + ')">' + tspans + '</text>' +
+        '</g>'
+      );
+    });
+    parts.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="#173A45" stroke-width="8"></circle>');
+    // Pegs are what the pointer "clicks" past; trackSpin ticks once per peg.
+    for (var k = 0; k < WHEEL.pegs; k++) {
+      var peg = polarToXY(cx, cy, r - 14, k * 360 / WHEEL.pegs);
+      parts.push('<circle class="peg" cx="' + fmt(peg.x) + '" cy="' + fmt(peg.y) + '" r="4.5"></circle>');
+    }
+    parts.push('<circle cx="' + cx + '" cy="' + cy + '" r="44" fill="#fff" stroke="#173A45" stroke-width="4"></circle>');
+    el.wheel.innerHTML = parts.join('');
+    setWheelRotation(state.wheelRotation, 0);
+  }
+  function setWheelRotation(deg, durationMs) {
+    state.wheelRotation = deg;
+    el.wheel.style.transitionDuration = durationMs + 'ms';
+    el.wheel.style.transform = 'rotate(' + deg + 'deg)';
+  }
+  function forceReflow() {
+    if (typeof el.wheel.getBoundingClientRect === 'function') el.wheel.getBoundingClientRect();
+  }
+  function spin() {
+    if (state.screen !== 'launch' || state.spinning) return;
+    state.spinning = true;
+    el.wheel.classList.add('spinning');
+    el.spin.disabled = true;
+    var winner = pickWinner();
+    var reduced = reducedMotion();
+    var target = targetRotation(state.wheelRotation, winner, reduced ? { turnsMin: 0, turnsMax: 0 } : {});
+    var duration = reduced ? TIMING.spinReducedMs : TIMING.spinMs;
+    var from = state.wheelRotation;
+    setHint('Spinning…');
+    sound.spinStart();
+    setWheelRotation(target, duration);
+    trackSpin(from, duration);
+    state.timers.spin = setTimeout(function () {
+      state.timers.spin = null;
+      stopSpinTrack();
+      if (state.screen !== 'launch') return;
+      var landed = areaIndexAtPointer(state.wheelRotation);
+      if (landed !== winner) console.warn('wheel landed on', landed, 'but the winner is', winner);
+      state.spinning = false;
+      el.wheel.classList.remove('spinning');
+      el.spin.disabled = false;
+      startArea(winner);
+    }, duration + TIMING.settleMs);
+  }
+  // The wheel's live angle in degrees mid-transition, read from the computed transform matrix.
+  function wheelAngle() {
+    var m = /matrix\(\s*([-\d.e]+)\s*,\s*([-\d.e]+)/.exec(window.getComputedStyle(el.wheel).transform || '');
+    return m ? Math.atan2(parseFloat(m[2]), parseFloat(m[1])) * 180 / Math.PI : null;
+  }
+  // Follows the CSS spin frame by frame: a tick each time a peg passes the pointer, a whir that
+  // follows the speed, and the landing chime when the transition ends.
+  function trackSpin(from, durationMs) {
+    stopSpinTrack();
+    if (!window.requestAnimationFrame || !window.getComputedStyle) return;
+    var pegDeg = 360 / WHEEL.pegs;
+    var now = function () { return window.performance && performance.now ? performance.now() : Date.now(); };
+    var track = { raf: null, whir: sound.whir() };
+    var rotation = from, lastAngle = wheelAngle(), lastPeg = Math.floor(from / pegDeg);
+    var began = now(), lastTime = began;
+    var animate = !reducedMotion() && el.pointerSvg && el.pointerSvg.animate;
+    function frame() {
+      var angle = wheelAngle(), t = now();
+      if (angle !== null && lastAngle !== null) {
+        var delta = mod(angle - lastAngle + 180, 360) - 180;
+        rotation += delta;
+        var p = Math.floor(rotation / pegDeg);
+        if (p !== lastPeg) {
+          lastPeg = p;
+          sound.tick();
+          if (animate) el.pointerSvg.animate([{ transform: 'rotate(-22deg)' }, { transform: 'rotate(0)' }], { duration: 110, easing: 'ease-out' });
+        }
+        track.whir.set(Math.abs(delta) / Math.max(1, t - lastTime) * 1000);
+      }
+      lastAngle = angle; lastTime = t;
+      if (t - began >= durationMs) {
+        stopSpinTrack();
+        sound.land();
+        return;
+      }
+      track.raf = window.requestAnimationFrame(frame);
+    }
+    state.spinTrack = track;
+    track.raf = window.requestAnimationFrame(frame);
+  }
+  function stopSpinTrack() {
+    var track = state.spinTrack;
+    if (!track) return;
+    state.spinTrack = null;
+    if (track.raf && window.cancelAnimationFrame) window.cancelAnimationFrame(track.raf);
+    track.whir.stop();
+  }
+  function wedgeFromEvent(event) {
+    var node = event.target;
+    while (node && node !== el.wheel) {
+      if (node.getAttribute && node.getAttribute('data-area-index') !== null) return Number(node.getAttribute('data-area-index'));
+      node = node.parentNode;
+    }
+    return -1;
+  }
+  function pickArea(i) {
+    if (state.spinning || state.screen !== 'launch') return;
+    sound.pick();
+    startArea(i);
+  }
+  el.wheel.addEventListener('click', function (event) {
+    var i = wedgeFromEvent(event);
+    if (i >= 0) pickArea(i);
+  });
+  el.wheel.addEventListener('keydown', function (event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    var i = wedgeFromEvent(event);
+    if (i < 0) return;
+    event.preventDefault();
+    pickArea(i);
+  });
+  el.spin.addEventListener('click', spin);
+
+  // ---------- quiz ----------
+  function startArea(areaIndex) {
+    if (state.spinning || state.screen !== 'launch') return;
+    var area = AREAS[areaIndex];
+    if (!area) return;
+    if (!state.decks[area.name]) state.decks[area.name] = newDeck(pools[area.name] || []);
+    var result = deal(state.decks[area.name], QUESTIONS_PER_QUIZ);
+    state.decks[area.name] = result.deck;
+    if (!result.dealt.length) {
+      setHint('No ' + area.name + ' questions in the bank yet. Run build-bank.mjs.');
+      return;
+    }
+    state.quiz = { areaIndex: areaIndex, questions: result.dealt.map(function (q) { return prepareQuestion(q); }), index: 0, score: 0, answered: false };
+    if (TIMING.readyMs > 0) showReady(area); else startQuiz();
+  }
+
+  // ---------- get ready ----------
+  var RING_C = 2 * Math.PI * 52; // circumference of the ring circle (r=52 in the SVG)
+  function showReady(area) {
+    el.screens.ready.style.setProperty('--area-color', area.color);
+    el.readyEmoji.textContent = area.emoji;
+    el.readyArea.textContent = area.name;
+    el.readyTagline.textContent = area.tagline;
+    el.readyRing.setAttribute('stroke-dasharray', String(RING_C));
+    el.readyRing.setAttribute('stroke-dashoffset', '0');
+    showScreen('ready');
+    sound.say(area.name + '!');
+    var total = TIMING.readyMs;
+    var end = Date.now() + total;
+    var shown = null;
+    function tick() {
+      var leftMs = Math.max(0, end - Date.now());
+      var left = Math.max(1, Math.ceil(leftMs / 1000));
+      if (left !== shown) { shown = left; setReadyNumber(left); }
+      el.readyRing.setAttribute('stroke-dashoffset', String(RING_C * (1 - leftMs / total)));
+      if (leftMs <= 0) { state.timers.ready = null; startQuiz(); return; }
+      state.timers.ready = setTimeout(tick, 100);
+    }
+    tick();
+  }
+  function setReadyNumber(n) {
+    el.readyNum.textContent = String(n);
+    sound.count();
+    el.readyNum.classList.remove('pop');
+    void el.readyNum.offsetWidth; // restart the pop animation
+    el.readyNum.classList.add('pop');
+  }
+  // Starts the dealt quiz when the countdown ends (or at once when readyMs is 0). Nothing cuts the countdown short.
+  function startQuiz() {
+    if (!state.quiz || (state.screen !== 'ready' && state.screen !== 'launch')) return;
+    showScreen('quiz');
+    sound.go();
+    renderQuestion();
+  }
+  function scoreText(score) { return score + (score === 1 ? ' pt' : ' pts'); }
+  function renderQuestion() {
+    var quiz = state.quiz;
+    var area = AREAS[quiz.areaIndex];
+    var q = quiz.questions[quiz.index];
+    var progress = 'Question ' + (quiz.index + 1) + ' of ' + quiz.questions.length;
+    el.areaBar.style.setProperty('--area-color', area.color);
+    el.quizEmoji.textContent = area.emoji;
+    el.quizArea.textContent = area.name;
+    el.progress.textContent = progress;
+    el.score.textContent = scoreText(quiz.score);
+    el.qLabel.textContent = progress;
+    el.qText.textContent = q.text;
+    el.options.innerHTML = '';
+    q.options.forEach(function (option, i) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'option';
+      button.setAttribute('data-i', String(i));
+      var kbd = document.createElement('kbd');
+      kbd.textContent = String(i + 1);
+      var text = document.createElement('span');
+      text.className = 'option-text';
+      text.textContent = option;
+      button.appendChild(kbd);
+      button.appendChild(text);
+      button.addEventListener('click', function () { answer(i); });
+      el.options.appendChild(button);
+    });
+    quiz.answered = false;
+    if (quiz.index > 0) sound.question();
+    armIdle(TIMING.quizIdleMs);
+  }
+  function answer(optionIndex) {
+    var quiz = state.quiz;
+    if (!quiz || quiz.answered || state.screen !== 'quiz') return;
+    var q = quiz.questions[quiz.index];
+    if (optionIndex < 0 || optionIndex >= q.options.length) return;
+    quiz.answered = true;
+    var correct = isCorrect(q, q.options[optionIndex]);
+    if (correct) quiz.score += 1;
+    if (correct) sound.correct(); else sound.wrong();
+    var buttons = el.options.querySelectorAll('.option');
+    for (var j = 0; j < buttons.length; j++) {
+      var button = buttons[j];
+      button.disabled = true;
+      if (isCorrect(q, q.options[j])) {
+        button.classList.add('correct');
+        addMark(button, '✓');
+      } else if (j === optionIndex) {
+        button.classList.add('wrong');
+        addMark(button, '✗');
+      } else {
+        button.classList.add('faded');
+      }
+    }
+    el.score.textContent = scoreText(quiz.score);
+    armIdle(TIMING.quizIdleMs);
+    state.timers.reveal = setTimeout(function () {
+      state.timers.reveal = null;
+      nextQuestion();
+    }, TIMING.revealMs);
+  }
+  function addMark(button, glyph) {
+    var mark = document.createElement('span');
+    mark.className = 'mark';
+    mark.setAttribute('aria-hidden', 'true');
+    mark.textContent = glyph;
+    button.appendChild(mark);
+  }
+  function nextQuestion() {
+    var quiz = state.quiz;
+    if (!quiz || state.screen !== 'quiz') return;
+    if (quiz.index + 1 < quiz.questions.length) {
+      quiz.index += 1;
+      renderQuestion();
+    } else {
+      showResults();
+    }
+  }
+  el.quit.addEventListener('click', function () { sound.whoosh(); showScreen('launch'); });
+
+  // ---------- results ----------
+  function showResults() {
+    var quiz = state.quiz;
+    var area = AREAS[quiz.areaIndex];
+    var total = quiz.questions.length;
+    var band = scoreBand(quiz.score, total);
+    el.resultsCard.style.setProperty('--area-color', area.color);
+    el.resultsArea.textContent = '🎉 Congrats! You finished ' + area.name;
+    el.bandTitle.textContent = band.title;
+    el.pct.textContent = percent(quiz.score, total) + '%';
+    el.frac.textContent = quiz.score + ' / ' + total + ' correct';
+    el.bandMsg.textContent = band.message;
+    showScreen('results');
+    if (band.celebrate) startConfetti();
+    playResults(quiz.score, total, band);
+    startAutoReturn(TIMING.resultsIdleMs);
+  }
+  function playResults(score, total, band) {
+    var ratio = total ? score / total : 0;
+    if (ratio >= 1) sound.fanfare();
+    else if (ratio >= 0.6) sound.jingle();
+    else if (ratio >= 0.4) sound.tada();
+    else sound.sadTrombone();
+    var line = band.title + ' ' + score + ' out of ' + total + '.';
+    state.timers.voice = setTimeout(function () {
+      state.timers.voice = null;
+      sound.say(line);
+    }, SOUND.voiceDelayMs);
+  }
+  function startAutoReturn(ms) {
+    var end = Date.now() + ms;
+    function tick() {
+      var left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+      el.autoReturn.textContent = 'Back to the wheel in ' + left + 's';
+      if (left <= 0) { showScreen('launch'); return; }
+      state.timers.countdown = setTimeout(tick, 250);
+    }
+    tick();
+  }
+  el.again.addEventListener('click', function () { sound.whoop(); showScreen('launch'); });
+
+  function startConfetti() {
+    var canvas = el.confetti;
+    var ctx = canvas.getContext ? canvas.getContext('2d') : null;
+    if (!ctx || !window.requestAnimationFrame) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    var colors = ['#E87722', '#D63A4C', '#173A45', '#10b981', '#f59e0b'];
+    var particles = [];
+    for (var i = 0; i < 150; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height - canvas.height,
+        size: Math.random() * 8 + 4,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        speedY: Math.random() * 3 + 2,
+        speedX: Math.random() * 2 - 1
+      });
+    }
+    function frame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(function (p) {
+        p.y += p.speedY;
+        p.x += p.speedX;
+        if (p.y > canvas.height) { p.y = -20; p.x = Math.random() * canvas.width; }
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      state.timers.confettiRaf = window.requestAnimationFrame(frame);
+    }
+    state.timers.confettiRaf = window.requestAnimationFrame(frame);
+    state.timers.confettiStop = setTimeout(stopConfetti, 6000);
+  }
+  function stopConfetti() {
+    if (state.timers.confettiRaf && window.cancelAnimationFrame) window.cancelAnimationFrame(state.timers.confettiRaf);
+    state.timers.confettiRaf = null;
+    if (state.timers.confettiStop) clearTimeout(state.timers.confettiStop);
+    state.timers.confettiStop = null;
+    var ctx = el.confetti.getContext ? el.confetti.getContext('2d') : null;
+    if (ctx) ctx.clearRect(0, 0, el.confetti.width, el.confetti.height);
+  }
+
+  // ---------- screens, timers, keyboard ----------
+  function clearTimers() {
+    ['idle', 'ready', 'reveal', 'spin', 'countdown', 'voice'].forEach(function (key) {
+      if (state.timers[key]) clearTimeout(state.timers[key]);
+      state.timers[key] = null;
+    });
+    stopSpinTrack();
+    stopConfetti();
+    sound.hush();
+  }
+  function showScreen(name) {
+    clearTimers();
+    state.screen = name;
+    Object.keys(el.screens).forEach(function (key) { el.screens[key].hidden = key !== name; });
+    if (name === 'launch') {
+      state.quiz = null;
+      state.spinning = false;
+      el.wheel.classList.remove('spinning');
+      el.spin.disabled = false;
+      setWheelRotation(WHEEL.restRotation, 0); // snap back so the labels read upright
+      forceReflow();
+      setHint(DEFAULT_HINT);
+    }
+    var focusTarget = { launch: el.brand, ready: el.readyArea, quiz: el.quizArea, results: el.bandTitle }[name];
+    if (focusTarget && focusTarget.focus) {
+      try { focusTarget.focus({ preventScroll: true }); } catch (e) { focusTarget.focus(); }
+    }
+    if (window.scrollTo) window.scrollTo(0, 0);
+  }
+  function armIdle(ms) {
+    if (state.timers.idle) clearTimeout(state.timers.idle);
+    state.timers.idle = setTimeout(function () {
+      state.timers.idle = null;
+      if (state.screen === 'quiz') showScreen('launch');
+    }, ms);
+  }
+  document.addEventListener('pointerdown', function () {
+    if (state.screen === 'quiz') armIdle(TIMING.quizIdleMs);
+  }, { passive: true });
+  // Chrome counts pointerdown from a mouse but only pointerup/touchend from a finger as a gesture that may start audio.
+  ['pointerdown', 'pointerup', 'touchend', 'keydown'].forEach(function (type) {
+    document.addEventListener(type, sound.unlock, { capture: true, passive: true });
+  });
+  function renderSoundToggles() {
+    el.soundToggle.setAttribute('aria-pressed', String(sound.isOn('fx')));
+    el.soundIcon.textContent = sound.isOn('fx') ? '🔊' : '🔇';
+    el.voiceToggle.setAttribute('aria-pressed', String(sound.isOn('voice')));
+    el.soundToggle.hidden = !sound.supported.fx;
+    el.voiceToggle.hidden = !sound.supported.voice;
+  }
+  function toggleSound(kind) {
+    sound.setOn(kind, !sound.isOn(kind));
+    renderSoundToggles();
+    if (kind === 'fx') sound.pick();
+    else if (sound.isOn('voice')) sound.say('Announcer on');
+  }
+  el.soundToggle.addEventListener('click', function () { toggleSound('fx'); });
+  el.voiceToggle.addEventListener('click', function () { toggleSound('voice'); });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    if (event.key === 'm' || event.key === 'M') { toggleSound('fx'); return; }
+    if (event.key === 'v' || event.key === 'V') { toggleSound('voice'); return; }
+    if (event.key === 'Escape') {
+      if (state.screen !== 'launch') { sound.whoosh(); showScreen('launch'); }
+      return;
+    }
+    if (state.screen === 'quiz') {
+      armIdle(TIMING.quizIdleMs);
+      if (/^[1-4]$/.test(event.key)) answer(Number(event.key) - 1);
+    } else if (state.screen === 'launch' && (event.key === 's' || event.key === 'S')) {
+      spin();
+    }
+  });
+
+  // ---------- boot ----------
+  renderWheel();
+  renderSoundToggles();
+  showScreen('launch');
+
+  // Exposed for the tests and the browser console; the game never reads this back.
+  window.TRIVIA = {
+    AREAS: AREAS, TIMING: TIMING, WHEEL: WHEEL, SOUND: SOUND, sound: sound, QUESTION_SETS: QUESTION_SETS, QUESTIONS_PER_QUIZ: QUESTIONS_PER_QUIZ,
+    geom: { mod: mod, polarToXY: polarToXY, wedgeStart: wedgeStart, wedgeMid: wedgeMid, wedgePath: wedgePath, labelPos: labelPos, areaIndexAtPointer: areaIndexAtPointer, pickWinner: pickWinner, targetRotation: targetRotation },
+    select: { shuffle: shuffle, buildPools: buildPools, newDeck: newDeck, deal: deal, prepareQuestion: prepareQuestion, isCorrect: isCorrect },
+    scoreBand: scoreBand, percent: percent,
+    state: state, pools: pools,
+    actions: { spin: spin, startArea: startArea, startQuiz: startQuiz, answer: answer, showScreen: showScreen }
+  };
+})();
+</script>
+</body>
+</html>

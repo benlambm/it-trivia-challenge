@@ -16,6 +16,28 @@ Keyboard: `1`–`4` answer, `S` spins, `Esc` goes back to the wheel. Works with 
 
 For a kiosk feel: Chrome `--kiosk file:///path/to/index.html` (or press F11), or iPad Guided Access.
 
+## Sound edition (`index-sound.html`)
+
+The same game with loud game-show sound effects and a spoken announcer. It is still one offline file:
+every sound is generated in the browser with the Web Audio API (no audio files), and the announcer is
+the browser's built-in speech voice. Works in current Chrome, Edge, Safari and Firefox.
+
+| Moment | Sound |
+|---|---|
+| SPIN | rev-up sweep, then a click for every peg that passes the pointer (slowing with the wheel), a whir that follows the speed, and a chime on landing |
+| Tap a slice | "select" blip |
+| Get ready | announcer says the area; beep on 3, 2, 1; horn on GO |
+| Each question | bloop (questions 2–5) |
+| Answer | right: bright two-note ding; wrong: game-show buzzer |
+| Results | 100%: fanfare and applause; 60–80%: jingle and applause; 40%: "ta-da"; under 40%: sad trombone. Then the announcer reads the score |
+| Back / Spin again | swoosh down / swoosh up |
+
+Top-right buttons (or keys) toggle **Sound** (`M`) and **Announcer** (`V`); both start on. Browsers
+only allow audio after the first tap or key press, so the very first SPIN also switches sound on.
+Loudness: `SOUND.drive` (default 2.4) at the top of the script pushes everything into a limiter, so it is
+as loud as the device volume allows without distorting. Turn the device volume up; a page cannot exceed it.
+On iPhone/iPad with iOS 17 or later sound plays even with the silent switch on; on older iOS it follows the switch.
+
 ## Phones and tablets
 
 - **Android**: opening `index.html` from the Files app in Chrome works as-is.
@@ -40,8 +62,8 @@ The raw JSON stays in the repo so a wrong fact can be fixed by hand and re-embed
 
 ```bash
 node offline/fetch-set.mjs           # POST https://trivia.benlamb.net/api/questions → sets/easier-NNN.json
-node offline/build-bank.mjs          # validate every set and embed them into index.html
-node offline/build-bank.mjs --check  # exit 1 if index.html is stale or a set is invalid
+node offline/build-bank.mjs          # validate every set and embed them into index.html and index-sound.html
+node offline/build-bank.mjs --check  # exit 1 if either page is stale or a set is invalid
 ```
 
 Each set adds 5 more questions per area; the game deals 5 per quiz and cycles through the whole pool
@@ -84,6 +106,7 @@ in the directory as a script.
 | Path | Role |
 |---|---|
 | `index.html` | the game (styles, markup, question bank, script) |
+| `index-sound.html` | the same game with synthesized sound effects and a speech announcer |
 | `sets/*.json` | raw saved question sets |
 | `lib/bank.mjs` | validator, serializer and block replacer shared by scripts and tests |
 | `fetch-set.mjs` | fetches a set from the live API |

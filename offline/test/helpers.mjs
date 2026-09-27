@@ -1,17 +1,19 @@
-// Shared helpers: load offline/index.html into happy-dom (from web/node_modules) with scripts enabled.
+// Shared helpers: load an offline page into happy-dom (from web/node_modules) with scripts enabled.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser } from '../../web/node_modules/happy-dom/lib/index.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-export const INDEX_PATH = path.join(here, '..', 'index.html');
+export const PAGES = ['index.html', 'index-sound.html'];
 
-export function readIndex() {
-  return fs.readFileSync(INDEX_PATH, 'utf8');
+export function readPage(name = 'index.html') {
+  return fs.readFileSync(path.join(here, '..', name), 'utf8');
 }
+export const readIndex = () => readPage('index.html');
 
-export async function loadPage() {
+// page: which offline file to load. headScript: JS injected before the page's own scripts (test stubs).
+export async function loadPage({ page: pageName = 'index.html', headScript = '' } = {}) {
   const browser = new Browser({
     settings: {
       // The page under test is our own file, not untrusted content.
@@ -22,7 +24,8 @@ export async function loadPage() {
     },
   });
   const page = browser.newPage();
-  page.content = readIndex();
+  const html = readPage(pageName);
+  page.content = headScript ? html.replace('<head>', `<head><script>${headScript}</script>`) : html;
   await page.waitUntilComplete();
   const window = page.mainFrame.window;
   const document = page.mainFrame.document;

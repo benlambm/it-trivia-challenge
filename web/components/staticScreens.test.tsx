@@ -88,7 +88,12 @@ describe('ResultsScreen', () => {
 });
 
 describe('Footer', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('renders important external links', () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
     render(<Footer />);
 
     expect(screen.getByRole('link', { name: /view source on github/i })).toHaveAttribute(
@@ -99,6 +104,25 @@ describe('Footer', () => {
       'href',
       'https://www.brightpoint.edu/applynow',
     );
+    expect(screen.queryByTestId('play-counter')).toBeNull();
+  });
+
+  it('shows the live play counter with a link to the stats page', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          timeZone: 'America/New_York',
+          firstEventAt: '2026-10-03T20:42:09.000Z',
+          players: { quizzes: 1234, completed: 987 },
+        }),
+      }),
+    );
+    render(<Footer />);
+    const counter = await screen.findByTestId('play-counter');
+    expect(counter).toHaveTextContent('1,234 quizzes played since Oct 2026 · 987 completed');
+    expect(screen.getByRole('link', { name: /live stats/i })).toHaveAttribute('href', '/stats');
   });
 });
 

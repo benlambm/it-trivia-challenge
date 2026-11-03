@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { Suspense, lazy, useState, useCallback } from 'react';
 import { GameState, Question, GameResult } from './types';
 import { fetchQuestions, fetchGameResults } from './services/triviaApi';
 import { DEFAULT_TIER, Difficulty, TIER_TO_DIFFICULTY, replayOptions } from './lib/difficulty';
@@ -9,9 +9,28 @@ import ResultsScreen from './components/ResultsScreen';
 import ErrorToast from './components/ErrorToast';
 import Footer from './components/Footer';
 
+// The public stats dashboard is its own chunk so players never download it.
+const StatsPage = lazy(() => import('./components/StatsPage'));
+
+function isStatsPath(): boolean {
+  return typeof window !== 'undefined' && /^\/stats\/?$/.test(window.location.pathname);
+}
+
 const App: React.FC = () => {
+  if (isStatsPath()) {
+    return (
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-slate-500">Loading stats…</div>}>
+        <StatsPage />
+      </Suspense>
+    );
+  }
+  return <Game />;
+};
+
+const Game: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(GameState.WELCOME);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [gameId, setGameId] = useState<string | null>(null);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [difficultyTier, setDifficultyTier] = useState(DEFAULT_TIER);
@@ -20,11 +39,13 @@ const App: React.FC = () => {
     setError(null);
     setGameState(GameState.LOADING_QUESTIONS);
     try {
-      const newQuestions = await fetchQuestions(difficulty, previousQuestions);
+      const quiz = await fetchQuestions(difficulty, previousQuestions);
+      const newQuestions = quiz?.questions;
       if (!newQuestions || newQuestions.length === 0) {
         throw new Error("Received empty question set from API.");
       }
       setQuestions(newQuestions);
+      setGameId(quiz.gameId);
       setGameState(GameState.PLAYING);
     } catch (err: any) {
       console.error("Failed to load questions", err);
@@ -42,7 +63,7 @@ const App: React.FC = () => {
   const handleGameFinish = useCallback(async (finalScore: number) => {
     setGameState(GameState.LOADING_RESULTS);
     try {
-      const result = await fetchGameResults(finalScore, questions.length);
+      const result = await fetchGameResults(finalScore, questions.length, gameId);
       setGameResult(result);
       setGameState(GameState.RESULTS);
     } catch (err: any) {
@@ -59,7 +80,7 @@ const App: React.FC = () => {
       });
       setGameState(GameState.RESULTS);
     }
-  }, [questions.length]);
+  }, [questions.length, gameId]);
 
   return (
     <div className="font-sans antialiased text-slate-900 relative">

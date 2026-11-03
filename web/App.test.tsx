@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { fetchGameResults, fetchQuestions } from './services/triviaApi';
 import type { ReplayOption } from './lib/difficulty';
@@ -9,6 +9,11 @@ import type { GameResult, Question } from './types';
 vi.mock('./services/triviaApi', () => ({
   fetchQuestions: vi.fn(),
   fetchGameResults: vi.fn(),
+  fetchStats: vi.fn().mockRejectedValue(new Error('not in tests')),
+}));
+
+vi.mock('./components/StatsPage', () => ({
+  default: () => <div>Stats dashboard</div>,
 }));
 
 vi.mock('./components/WelcomeScreen', () => ({
@@ -74,6 +79,8 @@ const firstQuestions: Question[] = [
   },
 ];
 
+const firstQuiz = { gameId: 'game-1', questions: firstQuestions };
+
 const secondQuestions: Question[] = [
   {
     id: 0,
@@ -83,6 +90,8 @@ const secondQuestions: Question[] = [
     correctAnswer: 'Names to IPs',
   },
 ];
+
+const secondQuiz = { gameId: 'game-2', questions: secondQuestions };
 
 const result: GameResult = {
   score: 23,
@@ -106,8 +115,17 @@ describe('App replay flow', () => {
     await screen.findByRole('button', { name: /^play again$/i });
   }
 
+  it('sends the quiz game ID with the final score', async () => {
+    vi.mocked(fetchQuestions).mockResolvedValue(firstQuiz);
+    vi.mocked(fetchGameResults).mockResolvedValue(result);
+
+    await playThroughFirstQuiz();
+
+    expect(fetchGameResults).toHaveBeenCalledWith(23, 1, 'game-1');
+  });
+
   it('offers easier, same and harder replays after a quiz', async () => {
-    vi.mocked(fetchQuestions).mockResolvedValue(firstQuestions);
+    vi.mocked(fetchQuestions).mockResolvedValue(firstQuiz);
     vi.mocked(fetchGameResults).mockResolvedValue(result);
 
     await playThroughFirstQuiz();
@@ -123,7 +141,7 @@ describe('App replay flow', () => {
     ['Play Again', 'easier'],
     ['Try a Harder Quiz', 'normal'],
   ])('"%s" requests %s with the previous quiz attached', async (label, difficulty) => {
-    vi.mocked(fetchQuestions).mockResolvedValueOnce(firstQuestions).mockResolvedValueOnce(secondQuestions);
+    vi.mocked(fetchQuestions).mockResolvedValueOnce(firstQuiz).mockResolvedValueOnce(secondQuiz);
     vi.mocked(fetchGameResults).mockResolvedValue(result);
 
     await playThroughFirstQuiz();
@@ -135,7 +153,7 @@ describe('App replay flow', () => {
   });
 
   it('keeps the chosen tier for the following replay', async () => {
-    vi.mocked(fetchQuestions).mockResolvedValue(firstQuestions);
+    vi.mocked(fetchQuestions).mockResolvedValue(firstQuiz);
     vi.mocked(fetchGameResults).mockResolvedValue(result);
 
     await playThroughFirstQuiz();
@@ -151,7 +169,7 @@ describe('App replay flow', () => {
   });
 
   it('hides the easier option when already at Much Easier', async () => {
-    vi.mocked(fetchQuestions).mockResolvedValue(firstQuestions);
+    vi.mocked(fetchQuestions).mockResolvedValue(firstQuiz);
     vi.mocked(fetchGameResults).mockResolvedValue(result);
 
     render(<App />);
@@ -168,7 +186,7 @@ describe('App replay flow', () => {
   });
 
   it('uses the selected starting difficulty on first play', async () => {
-    vi.mocked(fetchQuestions).mockResolvedValue(firstQuestions);
+    vi.mocked(fetchQuestions).mockResolvedValue(firstQuiz);
 
     render(<App />);
 
@@ -183,7 +201,7 @@ describe('App replay flow', () => {
   });
 
   it('starts on the Easier tier when the slider is untouched', async () => {
-    vi.mocked(fetchQuestions).mockResolvedValue(firstQuestions);
+    vi.mocked(fetchQuestions).mockResolvedValue(firstQuiz);
 
     render(<App />);
 
@@ -193,5 +211,18 @@ describe('App replay flow', () => {
     await waitFor(() => {
       expect(fetchQuestions).toHaveBeenCalledWith('easier', []);
     });
+  });
+});
+
+describe('App routing', () => {
+  afterEach(() => {
+    window.history.pushState({}, '', '/');
+  });
+
+  it('shows the stats dashboard at /stats', async () => {
+    window.history.pushState({}, '', '/stats');
+    render(<App />);
+    expect(await screen.findByText('Stats dashboard')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /start new game/i })).toBeNull();
   });
 });

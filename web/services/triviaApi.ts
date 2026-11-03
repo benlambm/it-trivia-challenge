@@ -1,6 +1,7 @@
-import { Question, GameResult } from '../types';
+import { Question, GameResult, PublicStats, QuizSet } from '../types';
 import { shuffleArray } from '../lib/shuffleArray';
 import { DEFAULT_DIFFICULTY, type Difficulty } from '../lib/difficulty';
+import { getDeviceId } from '../lib/device';
 
 async function postJson<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
@@ -22,6 +23,7 @@ async function postJson<T>(path: string, body?: unknown): Promise<T> {
 }
 
 interface QuestionsResponse {
+  gameId?: string;
   questions: Array<{
     category: string;
     text: string;
@@ -41,7 +43,7 @@ interface ResultsResponse {
 export const fetchQuestions = async (
   difficulty: Difficulty = DEFAULT_DIFFICULTY,
   previousQuestions: Question[] = [],
-): Promise<Question[]> => {
+): Promise<QuizSet> => {
   const previousQuestionPayload: PreviousQuestion[] = previousQuestions.map(
     ({ category, text, options, correctAnswer }) => ({
       category,
@@ -52,24 +54,39 @@ export const fetchQuestions = async (
   );
   const body =
     previousQuestionPayload.length > 0
-      ? { difficulty, previousQuestions: previousQuestionPayload }
-      : { difficulty };
-  const { questions } = await postJson<QuestionsResponse>('/api/questions', body);
+      ? { difficulty, previousQuestions: previousQuestionPayload, deviceId: getDeviceId() }
+      : { difficulty, deviceId: getDeviceId() };
+  const { questions, gameId } = await postJson<QuestionsResponse>('/api/questions', body);
   if (!Array.isArray(questions) || questions.length === 0) {
     throw new Error('Empty question set from API.');
   }
-  return questions.map((q, index) => ({
-    id: index,
-    category: q.category,
-    text: q.text,
-    options: shuffleArray(q.options),
-    correctAnswer: q.correctAnswer,
-  }));
+  return {
+    gameId: typeof gameId === 'string' ? gameId : null,
+    questions: questions.map((q, index) => ({
+      id: index,
+      category: q.category,
+      text: q.text,
+      options: shuffleArray(q.options),
+      correctAnswer: q.correctAnswer,
+    })),
+  };
 };
 
-export const fetchGameResults = async (score: number, total: number): Promise<GameResult> => {
+// Public, anonymous usage numbers (footer counter and /stats page).
+export const fetchStats = async (): Promise<PublicStats> => {
+  const res = await fetch('/api/stats', { headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error(`API ${res.status}: stats unavailable`);
+  return res.json() as Promise<PublicStats>;
+};
+
+export const fetchGameResults = async (
+  score: number,
+  total: number,
+  gameId: string | null = null,
+): Promise<GameResult> => {
   try {
-    const r = await postJson<ResultsResponse>('/api/results', { score, total });
+    const body = gameId ? { score, total, gameId, deviceId: getDeviceId() } : { score, total, deviceId: getDeviceId() };
+    const r = await postJson<ResultsResponse>('/api/results', body);
     return {
       score,
       totalQuestions: total,

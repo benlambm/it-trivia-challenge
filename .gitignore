@@ -53,3 +53,6 @@ Thumbs.db
 *.tgz
 *.bak
 *.backup
+
+# Local analytics events (production writes /var/lib/trivia-api/events.jsonl)
+api/data/

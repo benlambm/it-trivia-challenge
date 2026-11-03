@@ -12,6 +12,7 @@ How the IT Trivia Challenge monorepo is wired: a React SPA, a small Genkit API p
 | `api/` | Express, Genkit, zod | Gemini proxy; secrets in `api/.env` (gitignored) |
 | `offline/` | Plain HTML/CSS/JS, Node scripts | Single-file offline edition with an embedded question bank; no API, not deployed (see `offline/README.md`) |
 | `.github/workflows/` | GitHub Actions | `ci.yml` on PRs; `deploy.yml` on push to `main` |
+| `ops/` | systemd, nginx, bash | Server-side pieces installed by hand (not by deploy): state directory, `/stats` route, monthly report (see `ops/README.md`) |
 
 Backend source lives in **`api/`** inside the repo. In production, a systemd unit named `trivia-api` runs `api/index.js` from the deployed clone — that name is the **service**, not a separate top-level app directory.
 
@@ -67,8 +68,11 @@ flowchart LR
 
 | File | Responsibility |
 |------|----------------|
-| `App.tsx` | Game state machine; orchestrates screens |
-| `services/triviaApi.ts` | `POST /api/questions`, `POST /api/results` |
+| `App.tsx` | Game state machine; orchestrates screens; `/stats` renders the lazy-loaded `StatsPage` |
+| `services/triviaApi.ts` | `POST /api/questions`, `POST /api/results`, `GET /api/stats` |
+| `lib/device.ts` | Anonymous random device ID kept in `localStorage` (usage stats only) |
+| `components/StatsPage.tsx`, `StatsCharts.tsx` | Public stats dashboard at `/stats` |
+| `components/PlayCounter.tsx` | "N quizzes played" line in the footer |
 | `lib/shuffleArray.ts` | Shuffles options; assigns question `id` |
 | `components/*` | Welcome, Quiz, Results, Loading, Error, Footer |
 | `types.ts` | `GameState`, `Question`, `GameResult`, categories |
@@ -100,9 +104,13 @@ Keep **`api/index.js`** and **`web/services/triviaApi.ts`** in sync when changin
 
 | Method | Path | Request | Response |
 |--------|------|---------|----------|
-| `GET` | `/api/health` | — | `{ "status": "ok" }` |
-| `POST` | `/api/questions` | `{ difficulty?, previousQuestions? }` | `{ questions: [{ category, text, options[4], correctAnswer }] × 25 }` |
-| `POST` | `/api/results` | `{ score, total }` | `{ title, evaluation, motivation }` |
+| `GET` | `/api/health` | — | `{ "status": "ok", "model" }` |
+| `POST` | `/api/questions` | `{ difficulty?, previousQuestions?, deviceId? }` | `{ gameId, questions: [{ category, text, options[4], correctAnswer }] × 25 }` |
+| `POST` | `/api/results` | `{ score, total, gameId?, deviceId? }` | `{ title, evaluation, motivation }` |
+| `GET` | `/api/stats` | — | Public anonymous usage + cost summary (any origin, cached 60 s) |
+| `GET` | `/api/stats/daily.csv` | — | Daily usage and estimated Gemini cost as CSV |
+
+`gameId`/`deviceId` are optional so older clients keep working. Send header `X-Trivia-Test: 1` on any manual or scripted test so it is not counted as a player (it is still counted in cost).
 
 The frontend sends full previous quiz questions on replay to help Gemini avoid exact or near-duplicate questions. It adds `id` and shuffles `options` after fetch; the API returns canonical `correctAnswer` text.
 
@@ -121,6 +129,9 @@ Single entry point: **`api/index.js`** — Express routes plus two Genkit flows 
 | Rate limit | 10 requests/minute on `/api/questions` and `/api/results` |
 | CORS (prod) | Origin restricted to `https://trivia.benlamb.net` |
 | Secrets | `GOOGLE_GENAI_API_KEY` in `api/.env` only — use `api/.env.example` as template |
+| Usage + cost tracking | `analytics.js` appends one JSON line per event to `/var/lib/trivia-api/events.jsonl` (systemd `StateDirectory`, outside the deploy-reset checkout): quiz generated / abandoned / failed, game completed (score, difficulty), and every Gemini attempt with its tokens and estimated cost. No IPs, names or user agents. History from 2026-10-03 was imported from nginx logs (counts only). |
+| Pricing | `pricing.js`: Gemini list prices with effective dates (2027-01-01 doubles 3.x Flash); each call is priced on its own date. Estimates only; Google's invoice is the receipt. |
+| Reports | `scripts/report.mjs` (text, CSV, JSON, raw events per month); `ops/trivia-monthly-report` emails it on the 1st. |
 
 ## CI and deploy
 

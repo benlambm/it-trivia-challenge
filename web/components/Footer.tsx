@@ -1,4 +1,5 @@
 import React from 'react';
+import PlayCounter from './PlayCounter';
 
 type FooterLink = {
   label: string;
@@ -143,6 +144,7 @@ const Footer: React.FC = () => {
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-sm text-slate-400">
           <p>© {currentYear} Brightpoint IT Trivia Challenge</p>
+          <PlayCounter />
           <p>Made for students exploring IT careers.</p>
         </div>
 

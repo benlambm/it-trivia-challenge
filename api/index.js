@@ -1,4 +1,8 @@
 import 'dotenv/config';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { randomUUID } from 'node:crypto';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { genkit, z } from 'genkit';
@@ -6,6 +10,16 @@ import { genkit, z } from 'genkit';
 // same GOOGLE_GENAI_API_KEY (also GEMINI_API_KEY / GOOGLE_API_KEY) and keeps the 'googleai/' model prefix.
 import { googleAI } from '@genkit-ai/google-genai';
 import { buildQuestionsPrompt, QuestionsInputSchema, QuestionsOutputSchema } from './triviaQuestions.js';
+import {
+  classifySource,
+  cleanDeviceId,
+  cleanGameId,
+  createEventStore,
+  DIFFICULTY_ORDER,
+  dailyCsv,
+  geminiCallFields,
+  tokensFromUsage,
+} from './analytics.js';
 
 // Model is env-overridable (TRIVIA_MODEL in .env) so it can be changed with a
 // restart instead of a code edit + redeploy.
@@ -22,7 +36,7 @@ const DEFAULT_MODEL = 'googleai/gemini-3.8-flash';
 const MODEL = process.env.TRIVIA_MODEL || DEFAULT_MODEL;
 
 const ALLOWED_ORIGIN = 'https://trivia.benlamb.net';
-const PORT = 3000;
+const PORT = Number(process.env.TRIVIA_PORT || 3000);
 const HOST = '127.0.0.1';
 const JSON_BODY_LIMIT = '2mb';
 
@@ -38,6 +52,20 @@ const MIN_ATTEMPT_MS = Number(process.env.TRIVIA_MIN_ATTEMPT_MS || 18_000);
 const MAX_BACKOFF_MS = 2_000;
 
 const ai = genkit({ plugins: [googleAI()] });
+
+// Anonymous usage + cost tracking (see analytics.js). systemd's
+// StateDirectory=trivia-api sets STATE_DIRECTORY=/var/lib/trivia-api, which is
+// outside the repo checkout that every deploy hard-resets. Local runs fall back
+// to api/data/ (gitignored); TRIVIA_EVENTS_FILE overrides both.
+const EVENTS_FILE =
+  process.env.TRIVIA_EVENTS_FILE ||
+  (process.env.STATE_DIRECTORY
+    ? path.join(process.env.STATE_DIRECTORY.split(':')[0], 'events.jsonl')
+    : fileURLToPath(new URL('./data/events.jsonl', import.meta.url)));
+const events = createEventStore({ file: EVENTS_FILE, model: MODEL });
+
+// Carries { game, src } from the HTTP handler down to each Gemini attempt.
+const requestContext = new AsyncLocalStorage();
 
 const ResultsOutputSchema = z.object({
   title: z.string(),
@@ -73,10 +101,38 @@ function isTransientUpstream(err) {
 async function generateWithRetry(label, generate) {
   const startedAt = Date.now();
 
+  const ctx = requestContext.getStore() ?? {};
+
   for (let attempt = 1; ; attempt++) {
+    const attemptStartedAt = Date.now();
+    ctx.attempts = attempt;
     try {
-      return await generate();
+      const response = await generate();
+      events.record('gemini_call', {
+        flow: label,
+        game: ctx.game ?? null,
+        src: ctx.src ?? 'script',
+        model: MODEL,
+        attempt,
+        ms: Date.now() - attemptStartedAt,
+        ok: true,
+        ...geminiCallFields({ model: MODEL, tokens: tokensFromUsage(response?.usage) }),
+      });
+      return response;
     } catch (err) {
+      events.record('gemini_call', {
+        flow: label,
+        game: ctx.game ?? null,
+        src: ctx.src ?? 'script',
+        model: MODEL,
+        attempt,
+        ms: Date.now() - attemptStartedAt,
+        ok: false,
+        status: Number(err?.status ?? err?.cause?.status) || String(err?.status ?? 'error'),
+        tokens: null,
+        usd: 0,
+        priceFrom: null,
+      });
       if (!isTransientUpstream(err)) throw err;
 
       const elapsedMs = Date.now() - startedAt;
@@ -152,6 +208,29 @@ const triviaResultsFlow = ai.defineFlow(
 
 const app = express();
 app.set('trust proxy', 'loopback');
+
+// Public, anonymous usage numbers for the footer counter and /stats page. Open
+// to any origin (no personal data) and registered before the origin guard.
+const statsLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 120,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'rate_limited' },
+});
+app.get('/api/stats', statsLimiter, (_req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Cache-Control', 'public, max-age=60');
+  res.json(events.stats());
+});
+app.get('/api/stats/daily.csv', statsLimiter, (_req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Cache-Control', 'public, max-age=60');
+  res.type('text/csv');
+  res.attachment('trivia-daily-usage.csv');
+  res.send(dailyCsv(events.stats()));
+});
+
 app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
 app.use('/api/', (req, res, next) => {
@@ -176,18 +255,80 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', model: MODEL });
 });
 
+function pick(source, keys) {
+  const picked = {};
+  for (const key of keys) {
+    if (source[key] !== undefined) picked[key] = source[key];
+  }
+  return picked;
+}
+
+function failureReason(err) {
+  if (err instanceof UpstreamBusyError || isTransientUpstream(err)) return 'upstream_busy';
+  if (err?.status === 'INVALID_ARGUMENT') return 'invalid_request';
+  return 'error';
+}
+
 app.post('/api/questions', async (req, res, next) => {
+  const body = req.body ?? {};
+  const ctx = { game: randomUUID(), src: classifySource(req, ALLOWED_ORIGIN), attempts: 0 };
+  const startedAt = Date.now();
+  const base = {
+    game: ctx.game,
+    device: cleanDeviceId(body.deviceId),
+    src: ctx.src,
+    difficulty: body.difficulty === undefined ? 'easier' : DIFFICULTY_ORDER.includes(body.difficulty) ? body.difficulty : null,
+  };
+  // The player closing the tab or reloading while Gemini works shows up as the
+  // response closing before it was sent (nginx logs it as 499).
+  let settled = false;
+  res.on('close', () => {
+    if (!settled && !res.writableFinished) {
+      settled = true;
+      events.record('quiz_abandoned', { ...base, ms: Date.now() - startedAt });
+    }
+  });
   try {
-    const output = await triviaQuestionsFlow(req.body ?? {});
-    res.json(output);
+    // Pass only the flow's own fields (the browser also sends deviceId).
+    const input = pick(body, ['difficulty', 'previousQuestions']);
+    const output = await requestContext.run(ctx, () => triviaQuestionsFlow(input));
+    if (settled) return;
+    settled = true;
+    events.record('quiz_generated', {
+      ...base,
+      replay: Array.isArray(body.previousQuestions) && body.previousQuestions.length > 0,
+      ms: Date.now() - startedAt,
+      attempts: ctx.attempts,
+      model: MODEL,
+    });
+    res.json({ ...output, gameId: ctx.game });
   } catch (err) {
+    if (!settled) {
+      settled = true;
+      events.record('quiz_failed', { ...base, reason: failureReason(err), ms: Date.now() - startedAt });
+    }
     next(err);
   }
 });
 
 app.post('/api/results', async (req, res, next) => {
+  const body = req.body ?? {};
+  const src = classifySource(req, ALLOWED_ORIGIN);
+  const game = cleanGameId(body.gameId);
+  const { score, total } = body;
+  if (Number.isInteger(score) && Number.isInteger(total) && total >= 1 && score >= 0 && score <= total) {
+    const quiz = events.game(game);
+    events.record('game_completed', {
+      game,
+      device: cleanDeviceId(body.deviceId) ?? quiz?.device ?? null,
+      src,
+      difficulty: quiz?.difficulty ?? null,
+      score,
+      total,
+    });
+  }
   try {
-    const output = await triviaResultsFlow(req.body);
+    const output = await requestContext.run({ game, src }, () => triviaResultsFlow(pick(body, ['score', 'total'])));
     res.json(output);
   } catch (err) {
     next(err);
@@ -214,5 +355,8 @@ app.use((err, _req, res, _next) => {
 });
 
 app.listen(PORT, HOST, () => {
-  console.log(`[trivia-api] listening on http://${HOST}:${PORT} model=${MODEL}`);
+  console.log(
+    `[trivia-api] listening on http://${HOST}:${PORT} model=${MODEL} ` +
+      `events=${EVENTS_FILE} (${events.loaded} loaded)`,
+  );
 });

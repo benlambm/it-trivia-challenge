@@ -1,0 +1,59 @@
+#!/bin/bash
+# /usr/local/sbin/trivia-monthly-report (root)
+# Emails last month's IT Trivia usage + estimated Gemini cost to root (aliased
+# to Ben), with the daily CSV and that month's raw anonymous events attached as
+# an off-box backup, and keeps a dated local copy of the full events file.
+#
+# Overrides: TRIVIA_REPORT_MONTH=YYYY-MM|current|previous (default previous),
+#            TRIVIA_REPORT_TO=address (default root), DRY_RUN=1 prints the email.
+set -euo pipefail
+
+EVENTS="${TRIVIA_EVENTS_FILE:-/var/lib/trivia-api/events.jsonl}"
+REPORT=/opt/trivia-app/api/scripts/report.mjs
+MONTH_ARG="${TRIVIA_REPORT_MONTH:-previous}"
+TO="${TRIVIA_REPORT_TO:-root}"
+BACKUP_DIR=/var/backups/trivia-stats
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+
+month=$(node "$REPORT" --file "$EVENTS" --month "$MONTH_ARG" --format month)
+node "$REPORT" --file "$EVENTS" --month "$month" --format text > "$work/report.txt"
+node "$REPORT" --file "$EVENTS" --month "$month" --format csv > "$work/daily.csv"
+node "$REPORT" --file "$EVENTS" --month "$month" --format events > "$work/events.jsonl"
+
+install -d -m 0750 "$BACKUP_DIR"
+cp --preserve=mode,timestamps "$EVENTS" "$BACKUP_DIR/events-$(date -u +%F).jsonl"
+
+python3 -I - "$work" "$month" "$TO" "$(hostname)" > "$work/message.eml" <<'PY'
+import sys
+from email.message import EmailMessage
+work, month, to, host = sys.argv[1:5]
+body = open(f"{work}/report.txt").read()
+msg = EmailMessage()
+msg["To"] = to
+msg["Subject"] = f"[{host}] {body.splitlines()[0]}"
+msg.set_content(body)
+msg.add_attachment(open(f"{work}/daily.csv", "rb").read(), maintype="text", subtype="csv",
+                   filename=f"trivia-daily-{month}.csv")
+msg.add_attachment(open(f"{work}/events.jsonl", "rb").read(), maintype="application", subtype="x-ndjson",
+                   filename=f"trivia-events-{month}.jsonl")
+sys.stdout.write(msg.as_string())
+PY
+
+if [ "${DRY_RUN:-0}" = "1" ]; then
+  cat "$work/message.eml"
+  exit 0
+fi
+
+# msmtp has no queue: retry a couple of times before failing the unit (which
+# mails a failure alert through OnFailure=).
+for attempt in 1 2 3; do
+  if /usr/sbin/sendmail -t < "$work/message.eml"; then
+    echo "sent IT Trivia report for $month to $TO ($(wc -l < "$work/events.jsonl") events)"
+    exit 0
+  fi
+  echo "sendmail attempt $attempt failed" >&2
+  sleep 60
+done
+exit 1

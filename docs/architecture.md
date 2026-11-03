@@ -126,7 +126,7 @@ Single entry point: **`api/index.js`** — Express routes plus two Genkit flows 
 | Concern | Detail |
 |---------|--------|
 | Model | `googleai/gemini-3.8-flash` by default; override with `TRIVIA_MODEL` in `api/.env` (plugin: `@genkit-ai/google-genai`) |
-| Rate limit | 10 requests/minute on `/api/questions` and `/api/results` |
+| Rate limit | 30 requests/minute per client IP, shared by `/api/questions` and `/api/results` (a classroom shares one IP); override with `TRIVIA_RATE_LIMIT_PER_MIN` in `api/.env` + restart |
 | CORS (prod) | Origin restricted to `https://trivia.benlamb.net` |
 | Secrets | `GOOGLE_GENAI_API_KEY` in `api/.env` only — use `api/.env.example` as template |
 | Usage + cost tracking | `analytics.js` appends one JSON line per event to `/var/lib/trivia-api/events.jsonl` (systemd `StateDirectory`, outside the deploy-reset checkout): quiz generated / abandoned / failed, game completed (score, difficulty), and every Gemini attempt with its tokens and estimated cost. No IPs, names or user agents. History from 2026-10-03 was imported from nginx logs (counts only). |

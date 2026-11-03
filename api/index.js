@@ -241,9 +241,14 @@ app.use('/api/', (req, res, next) => {
   next();
 });
 
+// Per client IP, and shared by /api/questions and /api/results. A classroom
+// sits behind one school IP, so this is effectively a per-room cap on starts +
+// finishes per minute. Override with TRIVIA_RATE_LIMIT_PER_MIN in .env and
+// restart (no redeploy) if a bigger group is coming.
+const RATE_LIMIT_PER_MIN = Number(process.env.TRIVIA_RATE_LIMIT_PER_MIN || 30);
 const limiter = rateLimit({
   windowMs: 60_000,
-  max: 10,
+  max: RATE_LIMIT_PER_MIN,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'rate_limited' },

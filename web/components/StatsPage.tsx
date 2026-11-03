@@ -107,7 +107,7 @@ const Dashboard: React.FC<{ stats: PublicStats }> = ({ stats }) => {
           <StatTile
             label="Play sessions"
             value={stats.trackingStartedAt ? formatInt(p.sessions) : '—'}
-            note={`${formatPct(p.replayRate)} played again`}
+            note={p.replayRate === null ? undefined : `${formatPct(p.replayRate)} played again`}
           />
           <StatTile label="Gemini cost so far" value={formatUsd(g.costUsd)} note="estimated, every call" />
           <StatTile label="Cost per quiz" value={formatCents(g.costPerQuizUsd)} note="questions + results" />

@@ -186,7 +186,16 @@ describe('StatsPage', () => {
       firstEventAt: null,
       trackingStartedAt: null,
       backfill: null,
-      players: { ...fixtureStats.players, quizzes: 0, completed: 0, scoredGames: 0, completionRate: null, avgScorePct: null },
+      players: {
+        ...fixtureStats.players,
+        quizzes: 0,
+        completed: 0,
+        scoredGames: 0,
+        completionRate: null,
+        avgScorePct: null,
+        sessions: 0,
+        replayRate: null,
+      },
       moves: { easier: 0, same: 0, harder: 0 },
       daily: [],
       monthly: [],
@@ -194,6 +203,7 @@ describe('StatsPage', () => {
     });
     render(<StatsPage />);
     expect(await screen.findByText('No games yet.')).toBeInTheDocument();
+    expect(screen.queryByText(/played again/)).toBeNull();
     expect(screen.getByText(/Scores appear here/)).toBeInTheDocument();
     expect(screen.getByText(/Replays appear here/)).toBeInTheDocument();
   });

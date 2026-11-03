@@ -10,15 +10,15 @@ import { buildQuestionsPrompt, QuestionsInputSchema, QuestionsOutputSchema } fro
 // Model is env-overridable (TRIVIA_MODEL in .env) so it can be changed with a
 // restart instead of a code edit + redeploy.
 //
-// gemini-3.7-flash is the preferred model. It was unusable from 2026-08-17 to
-// 2026-08-29 (503 "high demand" on nearly every real 25-question generation),
-// and production ran pinned to gemini-3.6-flash in the meantime. Retested on
-// 2026-09-01: 6/6 first-attempt successes in 11-49s, so it is the default again.
-// gemini-3.6-flash remains the known-good fallback. gemini-flash-latest is a
-// floating alias that has resolved to a congested model, and gemini-2.5-flash
-// is retired (404). If "transient upstream error" shows up in the journal, set
+// gemini-3.8-flash is the preferred model. Google deprecated gemini-3.7-flash on
+// 2026-10-09 and silently redirects it to 3.8-flash (the response's modelVersion
+// says gemini-3.8-flash), so production had effectively been on 3.8-flash since
+// then with no errors; pinned explicitly on 2026-11-03. gemini-3.6-flash remains
+// the known-good fallback. gemini-flash-latest is a floating alias that has
+// resolved to a congested model, and gemini-2.5-flash is retired (404). If
+// "transient upstream error" shows up in the journal, set
 // TRIVIA_MODEL=googleai/gemini-3.6-flash in .env and restart trivia-api.
-const DEFAULT_MODEL = 'googleai/gemini-3.7-flash';
+const DEFAULT_MODEL = 'googleai/gemini-3.8-flash';
 const MODEL = process.env.TRIVIA_MODEL || DEFAULT_MODEL;
 
 const ALLOWED_ORIGIN = 'https://trivia.benlamb.net';

@@ -27,10 +27,10 @@ Single maintainer: commit on **`main`**, push when asked. No branches, worktrees
 | POST | `/api/questions` | body `{ difficulty?, previousQuestions? }` → `{ questions: [{ category, text, options[4], correctAnswer }] × 25 }` |
 | POST | `/api/results` | body `{ score, total }` → `{ title, evaluation, motivation }` |
 
-Frontend sends the previous quiz questions on replay so Gemini avoids repeats, then adds `id` and shuffles `options` (`web/lib/shuffleArray.ts`). API JSON body limit is `2mb` for replay payloads. Model: `googleai/gemini-flash-latest` in `api/index.js` (`MODEL` constant).
+Frontend sends the previous quiz questions on replay so Gemini avoids repeats, then adds `id` and shuffles `options` (`web/lib/shuffleArray.ts`). API JSON body limit is `2mb` for replay payloads. Model: `googleai/gemini-3.8-flash` (`DEFAULT_MODEL` in `api/index.js`), overridden by `TRIVIA_MODEL` in `api/.env`; `gemini-3.6-flash` is the fallback.
 
 ## CI/CD automated pipeline
-- **Node:** `>=22.12.0` (see `.nvmrc`; `web/` and `api/` `engines`). CI uses Node 22.
+- **Node:** `>=22.12.0` supported (`web/` and `api/` `engines`); develop, CI and VPS all run Node 24 (`.nvmrc`).
 - **CI:** `.github/workflows/ci.yml` runs `api/` tests, `web/` coverage tests, and `web/` bundle verification.
 - **Deploy:** `.github/workflows/deploy.yml` on push to `main`; backend restart only if `api/` changed in that push.
 - **Bundled:** React in `dist/assets/*.js`. **CDN:** Tailwind (`cdn.tailwindcss.com`).

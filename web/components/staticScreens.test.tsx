@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ErrorToast from './ErrorToast';
 import Footer from './Footer';
 import LoadingScreen from './LoadingScreen';
@@ -127,19 +127,90 @@ describe('Footer', () => {
 });
 
 describe('LoadingScreen', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
   afterEach(() => {
     vi.runOnlyPendingTimers();
     vi.useRealTimers();
   });
 
-  it('advances through loading messages', () => {
-    vi.useFakeTimers();
+  const NOTE = /Gemini AI is writing new questions just for you! This may take a minute or two\.\.\./;
+  const STAY_NOTICE =
+    "Wait! Don't click Refresh. Your Trivia questions are on their way now. Please be patient and count down from 10.";
+
+  const leavePage = (clientY: number) =>
+    act(() => {
+      document.documentElement.dispatchEvent(new MouseEvent('mouseleave', { clientY }));
+    });
+
+  it('paces question steps so the last one arrives near the slowest real games', () => {
     render(<LoadingScreen type="questions" />);
 
     expect(screen.getByText('Generating Challenge')).toBeInTheDocument();
-    act(() => vi.advanceTimersByTime(1600));
-
     expect(screen.getByText('Connecting to Neural Network...')).toBeInTheDocument();
+
+    act(() => vi.advanceTimersByTime(6999));
+    expect(screen.getByText('Connecting to Neural Network...')).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(1));
+    expect(screen.getByText(/^Scanning /)).toBeInTheDocument();
+
+    act(() => vi.advanceTimersByTime(27999));
+    expect(screen.queryByText('Finalizing Game Data...')).toBeNull();
+    act(() => vi.advanceTimersByTime(7001));
+    expect(screen.getByText('Finalizing Game Data...')).toBeInTheDocument();
+  });
+
+  it('keeps the results screen on its quick pace with no question messaging', () => {
+    render(<LoadingScreen type="results" />);
+
+    expect(screen.getByText('Grading Performance')).toBeInTheDocument();
+    expect(screen.queryByText('Calculating Score...')).toBeNull();
+    act(() => vi.advanceTimersByTime(1600));
+    expect(screen.getByText('Calculating Score...')).toBeInTheDocument();
+
+    expect(screen.queryByText(NOTE)).toBeNull();
+    leavePage(0);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('explains the wait underneath the progress bar', () => {
+    render(<LoadingScreen type="questions" />);
+
+    expect(screen.getByText(NOTE)).toBeInTheDocument();
+  });
+
+  it('flashes a warning when the cursor leaves through the top of the page', () => {
+    render(<LoadingScreen type="questions" />);
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    leavePage(0);
+    expect(screen.getByRole('alert')).toHaveTextContent(STAY_NOTICE);
+
+    act(() => vi.advanceTimersByTime(9999));
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(1));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('restarts the warning timer if the cursor heads up there again', () => {
+    render(<LoadingScreen type="questions" />);
+
+    leavePage(-5);
+    act(() => vi.advanceTimersByTime(8000));
+    leavePage(-5);
+    act(() => vi.advanceTimersByTime(8000));
+
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+
+  it('ignores the cursor leaving through the sides or bottom', () => {
+    render(<LoadingScreen type="questions" />);
+
+    leavePage(400);
+
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });
 

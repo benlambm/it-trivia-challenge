@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import QuizScreen from './QuizScreen';
 import { Category, Question } from '../types';
+import { replayOptions } from '../lib/difficulty';
 
 const questions: Question[] = [
   {
@@ -21,6 +22,8 @@ const questions: Question[] = [
   },
 ];
 
+const exits = { replayOptions: replayOptions(0), onReplay: vi.fn(), onHome: vi.fn() };
+
 describe('QuizScreen', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -33,7 +36,7 @@ describe('QuizScreen', () => {
 
   it('includes the final answer when reporting the score', () => {
     const onFinish = vi.fn();
-    render(<QuizScreen questions={questions} onFinish={onFinish} />);
+    render(<QuizScreen questions={questions} onFinish={onFinish} {...exits} />);
 
     fireEvent.click(screen.getByRole('button', { name: /skip intro/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Correct 1' }));
@@ -49,7 +52,7 @@ describe('QuizScreen', () => {
 
   it('does not allow changing an answer after the first selection', () => {
     const onFinish = vi.fn();
-    render(<QuizScreen questions={[questions[0]]} onFinish={onFinish} />);
+    render(<QuizScreen questions={[questions[0]]} onFinish={onFinish} {...exits} />);
 
     fireEvent.click(screen.getByRole('button', { name: /skip intro/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Wrong 1' }));
@@ -58,5 +61,51 @@ describe('QuizScreen', () => {
 
     expect(onFinish).toHaveBeenCalledWith(0);
     expect(onFinish).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers a home link and one step easier or harder during the quiz', () => {
+    const onReplay = vi.fn();
+    const onHome = vi.fn();
+    render(
+      <QuizScreen
+        questions={questions}
+        onFinish={vi.fn()}
+        replayOptions={replayOptions(0)}
+        onReplay={onReplay}
+        onHome={onHome}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /skip intro/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try an Easier Quiz' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Try a Harder Quiz' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+
+    expect(onReplay.mock.calls).toEqual([[-1], [1]]);
+    expect(onHome).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: /play again/i })).toBeNull();
+  });
+
+  it.each([
+    [-2, 'Try an Easier Quiz'],
+    [2, 'Try a Harder Quiz'],
+  ])('drops the step past the end of the scale at tier %i', (tier, missing) => {
+    render(<QuizScreen questions={questions} onFinish={vi.fn()} {...exits} replayOptions={replayOptions(tier)} />);
+    fireEvent.click(screen.getByRole('button', { name: /skip intro/i }));
+
+    expect(screen.queryByRole('button', { name: missing })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument();
+  });
+
+  it('does not finish a quiz the student left during the answer reveal', () => {
+    const onFinish = vi.fn();
+    const { unmount } = render(<QuizScreen questions={[questions[0]]} onFinish={onFinish} {...exits} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /skip intro/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Correct 1' }));
+    unmount();
+    act(() => vi.advanceTimersByTime(1500));
+
+    expect(onFinish).not.toHaveBeenCalled();
   });
 });

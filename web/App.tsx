@@ -60,6 +60,11 @@ const Game: React.FC = () => {
     }
   }, []);
 
+  const replayAtTier = useCallback((tier: number) => {
+    setDifficultyTier(tier);
+    startNewGame(TIER_TO_DIFFICULTY[tier], questions);
+  }, [startNewGame, questions]);
+
   const handleGameFinish = useCallback(async (finalScore: number) => {
     setGameState(GameState.LOADING_RESULTS);
     try {
@@ -93,7 +98,7 @@ const Game: React.FC = () => {
 
       {gameState === GameState.WELCOME && (
         <WelcomeScreen
-          onStart={() => startNewGame(TIER_TO_DIFFICULTY[difficultyTier])}
+          onStart={() => startNewGame(TIER_TO_DIFFICULTY[difficultyTier], questions)}
           difficultyTier={difficultyTier}
           onDifficultyTierChange={setDifficultyTier}
         />
@@ -107,6 +112,9 @@ const Game: React.FC = () => {
         <QuizScreen 
           questions={questions} 
           onFinish={handleGameFinish} 
+          replayOptions={replayOptions(difficultyTier)}
+          onReplay={replayAtTier}
+          onHome={() => setGameState(GameState.WELCOME)}
         />
       )}
 
@@ -118,10 +126,7 @@ const Game: React.FC = () => {
         <ResultsScreen
           result={gameResult}
           replayOptions={replayOptions(difficultyTier)}
-          onReplay={(tier) => {
-            setDifficultyTier(tier);
-            startNewGame(TIER_TO_DIFFICULTY[tier], questions);
-          }}
+          onReplay={replayAtTier}
         />
       )}
 

@@ -87,6 +87,8 @@ stateDiagram-v2
   LOADING_QUESTIONS --> PLAYING: 25 questions loaded
   LOADING_QUESTIONS --> WELCOME: Error
   PLAYING --> LOADING_RESULTS: Quiz complete
+  PLAYING --> LOADING_QUESTIONS: Easier / Harder
+  PLAYING --> WELCOME: Home
   LOADING_RESULTS --> RESULTS: Results ready
   LOADING_RESULTS --> RESULTS: Fallback on error
   RESULTS --> LOADING_QUESTIONS: Easier / Play again / Harder
@@ -97,6 +99,8 @@ stateDiagram-v2
 **Finish game:** Tally score → `POST /api/results` with `{ score, total }` → personalized title, evaluation, motivation.
 
 **Replay:** Results offers up to three buttons: Try an Easier Quiz (one tier down), Play Again (same tier), Try a Harder Quiz (one tier up). The step past either end of the scale is omitted, so Much Easier shows no easier button and Much Harder shows no harder button. The chosen tier becomes the current tier and the previous 25 questions are sent along so the next set avoids repeats.
+
+**Leave mid-quiz:** The quiz header offers Home plus the same easier and harder steps, so a student isn't stuck in a quiz that doesn't fit. Switching works exactly like a replay. Home keeps the current tier on the Welcome slider, and the next Start New Game still sends the abandoned questions. Leaving cancels any pending answer reveal, so an abandoned quiz never reports a score.
 
 ## API contract
 

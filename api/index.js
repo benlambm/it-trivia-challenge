@@ -50,6 +50,9 @@ const JSON_BODY_LIMIT = '2mb';
 const RETRY_BUDGET_MS = Number(process.env.TRIVIA_RETRY_BUDGET_MS || 120_000);
 const MIN_ATTEMPT_MS = Number(process.env.TRIVIA_MIN_ATTEMPT_MS || 18_000);
 const MAX_BACKOFF_MS = 2_000;
+// A reply that fails the schema check was still billed, so unlike a 503 it gets
+// one more try and no more, however much of the budget is left.
+const MAX_BAD_REPLY_RETRIES = 1;
 
 const ai = genkit({ plugins: [googleAI()] });
 
@@ -73,21 +76,34 @@ const ResultsOutputSchema = z.object({
   motivation: z.string(),
 });
 
-class UpstreamBusyError extends Error {
+// Every Gemini failure leaves generateWithRetry as one of these. None of them
+// carries a Genkit status, so the error handler can't mistake a problem on
+// Google's side for a bad request from the browser.
+class UpstreamError extends Error {
   constructor(message, { attempts, elapsedMs, cause }) {
     super(message);
-    this.name = 'UpstreamBusyError';
+    this.name = new.target.name;
     this.attempts = attempts;
     this.elapsedMs = elapsedMs;
     this.cause = cause;
   }
 }
 
+// Google is shedding load and retries ran out.
+class UpstreamBusyError extends UpstreamError {}
+
+// Google answered, but the reply failed the schema check or was blocked.
+class BadModelReplyError extends UpstreamError {}
+
+// Google refused the call itself, e.g. a bad API key or a retired model.
+class UpstreamRejectedError extends UpstreamError {}
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Google sheds load with 503 (and occasionally 429/500/502/504) when a model is
-// saturated. Those are worth retrying. Schema/validation failures are not --
-// they'd fail identically every time.
+// saturated. Those are worth retrying. A call Google refuses outright (400, 404)
+// is not; it would fail identically every time. Bad replies are a third case,
+// handled in generateWithRetry: the model is random, so a second try may well work.
 function isTransientUpstream(err) {
   const status = Number(err?.status ?? err?.cause?.status ?? err?.response?.status);
   if ([429, 500, 502, 503, 504].includes(status)) return true;
@@ -98,16 +114,28 @@ function isTransientUpstream(err) {
   );
 }
 
+// A schema error's message embeds the whole reply and schema; keep logs short.
+const brief = (err) => String(err?.message ?? err).replace(/\s+/g, ' ').slice(0, 200);
+
 async function generateWithRetry(label, generate) {
   const startedAt = Date.now();
 
   const ctx = requestContext.getStore() ?? {};
+  let badReplies = 0;
 
   for (let attempt = 1; ; attempt++) {
     const attemptStartedAt = Date.now();
     ctx.attempts = attempt;
+    // Genkit checks the reply after the model call returns, and its error keeps
+    // neither the reply nor the token usage. Holding the raw reply here tells us
+    // Google answered, so the attempt was billed, and what it cost.
+    let reply = null;
+    const keepReply = async (req, next) => {
+      reply = await next(req);
+      return reply;
+    };
     try {
-      const response = await generate();
+      const response = await generate(keepReply);
       events.record('gemini_call', {
         flow: label,
         game: ctx.game ?? null,
@@ -128,28 +156,44 @@ async function generateWithRetry(label, generate) {
         attempt,
         ms: Date.now() - attemptStartedAt,
         ok: false,
-        status: Number(err?.status ?? err?.cause?.status) || String(err?.status ?? 'error'),
-        tokens: null,
-        usd: 0,
-        priceFrom: null,
+        status: reply
+          ? 'bad_reply'
+          : Number(err?.status ?? err?.cause?.status) || String(err?.status ?? 'error'),
+        ...geminiCallFields({ model: MODEL, tokens: tokensFromUsage(reply?.usage) }),
       });
-      if (!isTransientUpstream(err)) throw err;
 
       const elapsedMs = Date.now() - startedAt;
       const backoffMs =
         Math.min(400 * 2 ** (attempt - 1), MAX_BACKOFF_MS) + Math.floor(Math.random() * 250);
+      const outOfTime = elapsedMs + backoffMs + MIN_ATTEMPT_MS > RETRY_BUDGET_MS;
+      const failure = { attempts: attempt, elapsedMs, cause: err };
 
-      if (elapsedMs + backoffMs + MIN_ATTEMPT_MS > RETRY_BUDGET_MS) {
-        throw new UpstreamBusyError(
-          `${label}: upstream busy after ${attempt} attempt(s) in ${elapsedMs}ms`,
-          { attempts: attempt, elapsedMs, cause: err },
+      if (reply) {
+        badReplies++;
+        if (outOfTime || badReplies > MAX_BAD_REPLY_RETRIES) {
+          throw new BadModelReplyError(
+            `${label}: unusable reply after ${attempt} attempt(s): ${brief(err)}`,
+            failure,
+          );
+        }
+        console.warn(
+          `[trivia-api] ${label}: bad reply on attempt ${attempt} ` +
+            `(${elapsedMs}ms elapsed, model=${MODEL}), retrying in ${backoffMs}ms: ${brief(err)}`,
+        );
+      } else if (!isTransientUpstream(err)) {
+        throw new UpstreamRejectedError(`${label}: Gemini call failed: ${brief(err)}`, failure);
+      } else {
+        if (outOfTime) {
+          throw new UpstreamBusyError(
+            `${label}: upstream busy after ${attempt} attempt(s) in ${elapsedMs}ms`,
+            failure,
+          );
+        }
+        console.warn(
+          `[trivia-api] ${label}: transient upstream error on attempt ${attempt} ` +
+            `(${elapsedMs}ms elapsed, model=${MODEL}), retrying in ${backoffMs}ms`,
         );
       }
-
-      console.warn(
-        `[trivia-api] ${label}: transient upstream error on attempt ${attempt} ` +
-          `(${elapsedMs}ms elapsed, model=${MODEL}), retrying in ${backoffMs}ms`,
-      );
       await sleep(backoffMs);
     }
   }
@@ -163,12 +207,13 @@ const triviaQuestionsFlow = ai.defineFlow(
   },
   async ({ difficulty, previousQuestions = [] }) => {
     const prompt = buildQuestionsPrompt({ difficulty, previousQuestions });
-    const { output } = await generateWithRetry('questions', () =>
+    const { output } = await generateWithRetry('questions', (keepReply) =>
       ai.generate({
         model: MODEL,
         system: 'You are an expert IT Educator creating a game for potential college students.',
         prompt,
         output: { schema: QuestionsOutputSchema },
+        use: [keepReply],
       }),
     );
     if (!output) throw new Error('Model returned empty output for questions flow');
@@ -193,12 +238,13 @@ const triviaResultsFlow = ai.defineFlow(
     2. Write a witty evaluation message based on the score.
     3. Write a custom motivational paragraph specifically explaining why they should consider a career in IT and taking classes at "Brightpoint Community College". Keep it energetic and appealing to high schoolers.
   `;
-    const { output } = await generateWithRetry('results', () =>
+    const { output } = await generateWithRetry('results', (keepReply) =>
       ai.generate({
         model: MODEL,
         system: 'You are a cool, encouraging guidance counselor for future tech professionals.',
         prompt,
         output: { schema: ResultsOutputSchema },
+        use: [keepReply],
       }),
     );
     if (!output) throw new Error('Model returned empty output for results flow');
@@ -269,6 +315,7 @@ function pick(source, keys) {
 }
 
 function failureReason(err) {
+  if (err instanceof BadModelReplyError) return 'bad_reply';
   if (err instanceof UpstreamBusyError || isTransientUpstream(err)) return 'upstream_busy';
   if (err?.status === 'INVALID_ARGUMENT') return 'invalid_request';
   return 'error';
@@ -346,9 +393,15 @@ app.use((err, _req, res, _next) => {
   if (err?.type === 'entity.too.large') {
     return res.status(413).json({ error: 'payload_too_large' });
   }
-  // Bad client payload (e.g. an unknown difficulty) is a 400, not our fault.
+  // Bad client payload (e.g. an unknown difficulty) is a 400, not our fault. The
+  // flow's input check is the only thing that can reach this branch now; Gemini
+  // failures arrive as UpstreamError with no status.
   if (err?.status === 'INVALID_ARGUMENT') {
     return res.status(400).json({ error: 'invalid_request' });
+  }
+  // Gemini's reply was unusable even after a retry. Nobody's request was wrong.
+  if (err instanceof BadModelReplyError) {
+    return res.status(502).json({ error: 'bad_model_reply' });
   }
   // Google shed the request. Say so honestly so the UI can offer a retry
   // instead of reporting a generic server fault.

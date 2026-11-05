@@ -30,6 +30,8 @@ Single maintainer: commit on **`main`**, push when asked. No branches, worktrees
 | GET | `/api/stats` | public anonymous usage + estimated Gemini cost (any origin) |
 | GET | `/api/stats/daily.csv` | daily usage + cost CSV (reimbursement backup) |
 
+Errors from `/api/questions` and `/api/results`, as `{ "error": code }`: `400 invalid_request` (bad browser input, the only case that blames the client), `502 bad_model_reply` (Gemini's reply failed the schema check or was blocked, after one retry), `503 upstream_busy` (Google shedding load, retries ran out), `429 rate_limited`, `500 internal_error` (includes Google refusing the call, e.g. a bad API key). A rejected reply was still billed, so its `gemini_call` event has `ok: false`, `status: "bad_reply"` and real tokens and cost. `api/index.test.js` covers this by running the real server and Genkit against a scripted Google (`api/testing/fake-gemini.js`).
+
 Frontend sends the previous quiz questions on replay so Gemini avoids repeats, then adds `id` and shuffles `options` (`web/lib/shuffleArray.ts`). API JSON body limit is `2mb` for replay payloads. Model: `googleai/gemini-3.8-flash` (`DEFAULT_MODEL` in `api/index.js`), overridden by `TRIVIA_MODEL` in `api/.env`; `gemini-3.6-flash` is the fallback.
 
 ## Usage and cost tracking

@@ -9,8 +9,11 @@
 //   quiz_generated  game, device, difficulty, replay, ms, attempts, model
 //   quiz_abandoned  game, device, difficulty, ms   (player left while it generated)
 //   quiz_failed     game, device, difficulty, reason, ms
+//                   reason: upstream_busy, bad_reply, invalid_request or error
 //   game_completed  game, device, difficulty, score, total
 //   gemini_call     flow, game, model, attempt, ms, ok, status, tokens{input,output,thoughts,cached}, usd, priceFrom
+//                   status 'bad_reply': Google answered but the reply was rejected, so
+//                   ok is false yet tokens and usd are real (the attempt was billed)
 // src is 'web' (the real site), 'script' (no browser Origin, e.g. offline/fetch-set.mjs)
 // or 'test' (X-Trivia-Test header). Public player numbers count 'web' only;
 // Gemini cost counts everything, because everything is billed.

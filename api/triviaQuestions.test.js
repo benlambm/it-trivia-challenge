@@ -14,8 +14,9 @@ const previousQuestion = {
   correctAnswer: 'Scam email',
 };
 
-test('questions input defaults to normal difficulty', () => {
-  assert.equal(QuestionsInputSchema.parse({}).difficulty, 'easier');
+test('a prompt with no difficulty uses the default', () => {
+  assert.match(buildQuestionsPrompt({}), /Requested difficulty key: easier\b/);
+  assert.match(buildQuestionsPrompt({ difficulty: undefined }), /Requested difficulty key: easier\b/);
 });
 
 test('questions input accepts previous quiz questions', () => {

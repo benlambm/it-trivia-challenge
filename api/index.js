@@ -9,7 +9,12 @@ import { genkit, z } from 'genkit';
 // @genkit-ai/googleai is deprecated upstream; google-genai is its successor. It reads the
 // same GOOGLE_GENAI_API_KEY (also GEMINI_API_KEY / GOOGLE_API_KEY) and keeps the 'googleai/' model prefix.
 import { googleAI } from '@genkit-ai/google-genai';
-import { buildQuestionsPrompt, QuestionsInputSchema, QuestionsOutputSchema } from './triviaQuestions.js';
+import {
+  buildQuestionsPrompt,
+  DEFAULT_DIFFICULTY,
+  QuestionsInputSchema,
+  QuestionsOutputSchema,
+} from './triviaQuestions.js';
 import {
   classifySource,
   cleanDeviceId,
@@ -104,7 +109,20 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // saturated. Those are worth retrying. A call Google refuses outright (400, 404)
 // is not; it would fail identically every time. Bad replies are a third case,
 // handled in generateWithRetry: the model is random, so a second try may well work.
+//
+// Google can also report overload inside an HTTP 200 reply, which leaves no status
+// number in the message, so match Genkit's names for it too. Listed by name because
+// Genkit's numeric err.code gives UNKNOWN a 500, and an unclassified failure
+// shouldn't spin through the whole retry budget.
+const TRANSIENT_GENKIT_STATUSES = new Set([
+  'UNAVAILABLE',
+  'RESOURCE_EXHAUSTED',
+  'DEADLINE_EXCEEDED',
+  'INTERNAL',
+]);
+
 function isTransientUpstream(err) {
+  if (TRANSIENT_GENKIT_STATUSES.has(err?.status)) return true;
   const status = Number(err?.status ?? err?.cause?.status ?? err?.response?.status);
   if ([429, 500, 502, 503, 504].includes(status)) return true;
   const message = String(err?.message ?? '');
@@ -329,7 +347,7 @@ app.post('/api/questions', async (req, res, next) => {
     game: ctx.game,
     device: cleanDeviceId(body.deviceId),
     src: ctx.src,
-    difficulty: body.difficulty === undefined ? 'easier' : DIFFICULTY_ORDER.includes(body.difficulty) ? body.difficulty : null,
+    difficulty: body.difficulty === undefined ? DEFAULT_DIFFICULTY : DIFFICULTY_ORDER.includes(body.difficulty) ? body.difficulty : null,
   };
   // The player closing the tab or reloading while Gemini works shows up as the
   // response closing before it was sent (nginx logs it as 499).

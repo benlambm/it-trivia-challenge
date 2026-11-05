@@ -42,11 +42,17 @@ function freePort() {
   });
 }
 
+const readJsonLines = (file) =>
+  fs.existsSync(file)
+    ? fs.readFileSync(file, 'utf8').trim().split('\n').map((line) => JSON.parse(line))
+    : [];
+
 // Starts a server that will get these Google replies, runs one POST against it,
-// and returns the response with the events it logged.
-async function post(route, body, replies) {
+// and returns the response with the events it logged and what it sent to Google.
+async function post(route, body, replies, env = {}) {
   const port = await freePort();
   const eventsFile = path.join(scratch, `${port}.jsonl`);
+  const requestsFile = path.join(scratch, `${port}-requests.jsonl`);
   const server = spawn(process.execPath, ['--import', './testing/fake-gemini.js', 'index.js'], {
     cwd: apiDir,
     stdio: 'ignore',
@@ -56,6 +62,8 @@ async function post(route, body, replies) {
       TRIVIA_PORT: String(port),
       TRIVIA_EVENTS_FILE: eventsFile,
       FAKE_GEMINI_REPLIES: JSON.stringify(replies),
+      FAKE_GEMINI_REQUESTS: requestsFile,
+      ...env,
     },
   });
   const base = `http://127.0.0.1:${port}`;
@@ -74,14 +82,13 @@ async function post(route, body, replies) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    const events = fs.existsSync(eventsFile)
-      ? fs.readFileSync(eventsFile, 'utf8').trim().split('\n').map((line) => JSON.parse(line))
-      : [];
+    const events = readJsonLines(eventsFile);
     return {
       status: res.status,
       body: await res.json(),
       calls: events.filter((event) => event.type === 'gemini_call'),
       event: (type) => events.find((event) => event.type === type),
+      prompts: readJsonLines(requestsFile).map((request) => request.input[0].content[0].text),
     };
   } finally {
     server.kill();
@@ -158,5 +165,47 @@ describe('Gemini failure handling', () => {
     assert.equal(r.calls.length, 2);
     assert.equal(r.calls[0].usd, 0);
     assert.equal(r.calls[1].ok, true);
+  });
+
+  it('retries when Google reports overload inside a normal reply', async () => {
+    const r = await post('/api/questions', {}, [{ failed: 'service_unavailable' }, GOOD_QUIZ]);
+    assert.equal(r.status, 200);
+    assert.equal(r.calls.length, 2);
+    assert.equal(r.calls[0].status, 'UNAVAILABLE');
+    assert.equal(r.calls[0].usd, 0);
+    assert.equal(r.calls[1].ok, true);
+  });
+
+  it('answers busy when that overload outlasts the retry budget', async () => {
+    const r = await post('/api/questions', {}, [{ failed: 'service_unavailable' }], {
+      TRIVIA_RETRY_BUDGET_MS: '1',
+    });
+    assert.equal(r.status, 503);
+    assert.deepEqual(r.body, { error: 'upstream_busy' });
+    assert.equal(r.event('quiz_failed').reason, 'upstream_busy');
+  });
+
+  for (const code of ['model_not_found', 'something_google_adds_later']) {
+    it(`does not retry a ${code} failure inside a normal reply`, async () => {
+      const r = await post('/api/questions', {}, [{ failed: code }, GOOD_QUIZ]);
+      assert.equal(r.status, 500);
+      assert.deepEqual(r.body, { error: 'internal_error' });
+      assert.equal(r.calls.length, 1);
+    });
+  }
+});
+
+// The default lives on the live path, so it's checked in the prompt Google would get.
+describe('default difficulty', () => {
+  it('uses and logs easier when a request sends no difficulty', async () => {
+    const r = await post('/api/questions', {}, [GOOD_QUIZ]);
+    assert.match(r.prompts[0], /Requested difficulty key: easier\b/);
+    assert.equal(r.event('quiz_generated').difficulty, 'easier');
+  });
+
+  it('keeps a difficulty the request does send', async () => {
+    const r = await post('/api/questions', { difficulty: 'harder' }, [GOOD_QUIZ]);
+    assert.match(r.prompts[0], /Requested difficulty key: harder\b/);
+    assert.equal(r.event('quiz_generated').difficulty, 'harder');
   });
 });

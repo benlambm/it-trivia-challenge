@@ -25,7 +25,7 @@ Single maintainer: commit on **`main`**, push when asked. No branches, worktrees
 | Method | Path | Response |
 |--------|------|----------|
 | GET | `/api/health` | `{ "status": "ok", "model" }` |
-| POST | `/api/questions` | body `{ difficulty?, previousQuestions?, deviceId? }` → `{ gameId, questions: [{ category, text, options[4], correctAnswer }] × 25 }` |
+| POST | `/api/questions` | body `{ difficulty? (default `easier`), previousQuestions?, deviceId? }` → `{ gameId, questions: [{ category, text, options[4], correctAnswer }] × 25 }` |
 | POST | `/api/results` | body `{ score, total, gameId?, deviceId? }` → `{ title, evaluation, motivation }` |
 | GET | `/api/stats` | public anonymous usage + estimated Gemini cost (any origin) |
 | GET | `/api/stats/daily.csv` | daily usage + cost CSV (reimbursement backup) |

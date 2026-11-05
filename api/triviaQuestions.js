@@ -18,6 +18,8 @@ const CATEGORY_CYBER = 'Cybersecurity';
 const CATEGORY_OPS = 'IT Operations and Support';
 
 const DIFFICULTY_LEVELS = ['much_easier', 'easier', 'normal', 'harder', 'much_harder'];
+// Matches the web slider's DEFAULT_TIER (-1) so a bare request behaves like an untouched slider.
+export const DEFAULT_DIFFICULTY = 'easier';
 const DIFFICULTY_DESCRIPTORS = {
   much_easier: 'elementary to middle-school level: very basic, intuitive concepts about everyday technology (e.g., "What does Wi-Fi let devices do?", "What is a password used for?"). Use simple wording and obvious distractors.',
   easier: 'early high-school level: common-knowledge IT concepts with simple wording. Distractors should be plausible but clearly distinguishable to anyone who has used a computer.',
@@ -27,8 +29,9 @@ const DIFFICULTY_DESCRIPTORS = {
 };
 
 export const QuestionsInputSchema = z.object({
-  // Matches the web slider's DEFAULT_TIER (-1) so a bare request behaves like an untouched slider.
-  difficulty: z.enum(DIFFICULTY_LEVELS).default('easier'),
+  // Not .default(): Genkit checks flow input with Ajv, which ignores Zod defaults,
+  // so one here would never apply. buildQuestionsPrompt fills it in instead.
+  difficulty: z.enum(DIFFICULTY_LEVELS).optional(),
   previousQuestions: z.array(QuestionSchema).max(25).optional(),
 });
 
@@ -65,7 +68,7 @@ export function formatDifficultyGuardrails(difficulty = 'normal') {
   `;
 }
 
-export function buildQuestionsPrompt({ difficulty = 'normal', previousQuestions = [] } = {}) {
+export function buildQuestionsPrompt({ difficulty = DEFAULT_DIFFICULTY, previousQuestions = [] } = {}) {
   const descriptor = DIFFICULTY_DESCRIPTORS[difficulty] ?? DIFFICULTY_DESCRIPTORS.normal;
   const previousQuestionsPrompt = formatPreviousQuestionsForPrompt(previousQuestions);
   const difficultyGuardrails = formatDifficultyGuardrails(difficulty);

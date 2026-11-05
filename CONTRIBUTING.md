@@ -36,7 +36,7 @@ npm ci
 npm run dev                   # http://localhost:5173 (proxies /api to the backend)
 ```
 
-The Vite dev server proxies `/api` to the backend (see `web/vite.config.ts`). After that, edit code and Vite reloads instantly. The backend restart is manual — `Ctrl-C` and `node index.js` again — unless you wire up `node --watch`.
+The Vite dev server proxies `/api` to the backend and presents the live site's origin, because the API only accepts browser requests from there (see `web/vite.config.ts`). After that, edit code and Vite reloads instantly. The backend restart is manual — `Ctrl-C` and `node index.js` again — unless you wire up `node --watch`.
 
 **Node version:** Node `>=22.12.0` (Vite 8). Run `npm test` in `api/`, plus `npm run test:coverage` and `npm run verify:bundle` in `web/` before pushing.
 
@@ -47,11 +47,11 @@ The Vite dev server proxies `/api` to the backend (see `web/vite.config.ts`). Af
 1. **Fork the repo** (or create a branch if you have push access).
 2. **Branch from `main`**: `git checkout -b your-thing`. Branch names like `feature/share-card`, `fix/loading-flash`, or `prompt/better-cyber-questions` are fine — be descriptive.
 3. **Make your change.** Small, focused changes get merged faster than sprawling ones. If you're tempted to do two unrelated things, that's two PRs.
-4. **Run automated checks**: `npm test` in `api/`, plus `npm run test:coverage` and `npm run verify:bundle` in `web/`. **Test manually**: play through a full game (Welcome → Loading → Quiz → Results). If you touched `api/index.js`, hit `curl -fsS http://127.0.0.1:3000/api/health` and confirm questions/results still return valid JSON.
+4. **Run automated checks**: `npm test` in `api/`, plus `npm run test:coverage` and `npm run verify:bundle` in `web/`. **Test manually**: play through a full game (Welcome → Loading → Quiz → Results). If you touched `api/`, hit `curl -fsS http://127.0.0.1:3000/api/health` and confirm questions/results still return valid JSON.
 5. **Push and open a PR** against `main`. Describe what you did and why. Screenshots/GIFs help a lot for UI changes.
 6. **CI runs automatically** on the PR ([`ci.yml`](./.github/workflows/ci.yml): unit tests + production build + bundle security checks). It doesn't auto-deploy from PRs — only `main` does.
 
-After review and merge, the [deploy workflow](./.github/workflows/deploy.yml) ships your change to production within ~10 seconds. You'll see it live.
+After review and merge, the [deploy workflow](./.github/workflows/deploy.yml) ships your change to production, usually in under a minute. You'll see it live.
 
 ---
 
@@ -83,17 +83,19 @@ Honestly: nothing heavy. The repo has no enforced linter or formatter yet (PRs t
 
 ## Changing the `/api/*` contract
 
-The frontend and backend talk through three endpoints with specific shapes:
+The frontend and backend talk through these endpoints with specific shapes:
 
 | Endpoint | Request | Response |
 |---|---|---|
-| `GET /api/health` | (none) | `{ "status": "ok" }` |
-| `POST /api/questions` | `{ difficulty?, previousQuestions? }` | `{ "questions": [{ category, text, options[4], correctAnswer }, ...25 ] }` |
-| `POST /api/results` | `{ score, total }` | `{ title, evaluation, motivation }` |
+| `GET /api/health` | (none) | `{ "status": "ok", "model" }` |
+| `POST /api/questions` | `{ difficulty?, previousQuestions?, deviceId? }` | `{ gameId, "questions": [{ category, text, options[4], correctAnswer }, ...25 ] }` |
+| `POST /api/results` | `{ score, total, gameId?, deviceId? }` | `{ title, evaluation, motivation }` |
+
+There are also two public, read-only stats routes. See [`docs/architecture.md`](./docs/architecture.md).
 
 If you change a shape, you need to update **both sides** in the same PR:
 
-- Backend: the relevant zod schema and prompt in [`api/index.js`](./api/index.js).
+- Backend: the relevant zod schema and prompt, in [`api/triviaQuestions.js`](./api/triviaQuestions.js) for quizzes or [`api/index.js`](./api/index.js) for results.
 - Frontend: the matching TypeScript interfaces in [`web/types.ts`](./web/types.ts) and the consumer in [`web/services/triviaApi.ts`](./web/services/triviaApi.ts).
 
 If you only update one side, the app will explode at runtime in interesting ways.
@@ -102,13 +104,13 @@ If you only update one side, the app will explode at runtime in interesting ways
 
 ## Prompt changes
 
-The prompts in `api/index.js` are the closest thing this repo has to a "product." Tweaks are welcome and easy to test — just edit the string, restart the Node process, hit `/api/questions` or `/api/results`, and see what changes.
+The prompts are the closest thing this repo has to a "product." The quiz prompt is in `api/triviaQuestions.js` and the results prompt is in `api/index.js`. Tweaks are welcome and easy to test — just edit the string, restart the Node process, hit `/api/questions` or `/api/results`, and see what changes.
 
 Things to watch for when editing prompts:
 
-- **Stay in the zod schema.** If you ask the model to add a new field, also add it to the schema, or Genkit will reject the response.
+- **Stay in the zod schema.** If you want a new field, add it to the schema as well as the prompt. Gemini is handed the schema, so a field that's missing from it may never arrive, and nothing will check it if it does.
 - **Keep the audience consistent.** This game targets high-schoolers and early-college students considering IT. Keep questions accessible — no enterprise jargon, no acronym soup.
-- **Watch the answer distribution.** LLMs love putting the right answer at position B or C. The current prompt yells "CRITICAL: randomize" for a reason. If you rewrite that section, test with a few runs and count which positions the correct answer ends up at.
+- **Don't spend prompt words on answer position.** LLMs love putting the right answer at position B or C, so the browser shuffles the four options after every fetch (`web/lib/shuffleArray.ts`). The prompt doesn't need to ask for it.
 
 ---
 

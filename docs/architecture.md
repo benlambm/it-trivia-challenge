@@ -11,7 +11,7 @@ How the IT Trivia Challenge monorepo is wired: a React SPA, a small Genkit API p
 | `web/` | React 19, Vite 8, TypeScript | SPA; calls `/api/*` only |
 | `api/` | Express, Genkit, zod | Gemini proxy; secrets in `api/.env` (gitignored) |
 | `offline/` | Plain HTML/CSS/JS, Node scripts | Single-file offline edition with an embedded question bank; no API, not deployed (see `offline/README.md`) |
-| `.github/workflows/` | GitHub Actions | `ci.yml` on PRs; `deploy.yml` on push to `main` |
+| `.github/workflows/` | GitHub Actions | `ci.yml` on PRs and pushes to `main`; `deploy.yml` on push to `main` |
 | `ops/` | systemd, nginx, bash | Server-side pieces installed by hand (not by deploy): state directory, `/stats` route, monthly report (see `ops/README.md`) |
 
 Backend source lives in **`api/`** inside the repo. In production, a systemd unit named `trivia-api` runs `api/index.js` from the deployed clone — that name is the **service**, not a separate top-level app directory.
@@ -24,7 +24,7 @@ flowchart TB
   Nginx["nginx\n:443 HTTPS"]
   Static["Static SPA\nVite build from web/"]
   API["api/\nExpress + Genkit\n127.0.0.1:3000"]
-  Gemini["Gemini API\ngemini-flash-latest"]
+  Gemini["Gemini API\ngemini-3.8-flash"]
 
   Browser --> Nginx
   Nginx -->|"/"| Static
@@ -50,7 +50,7 @@ flowchart TB
   API --> Gemini
 ```
 
-Run the API and frontend in two terminals (`api/` then `web/`). Vite proxies `/api` to port 3000 — see `web/vite.config.ts`.
+Run the API and frontend in two terminals (`api/` then `web/`). Vite proxies `/api` to port 3000 and presents the live site's `Origin`, because the API's origin check accepts no other browser origin — see `web/vite.config.ts`.
 
 ## Frontend (`web/`)
 
@@ -114,13 +114,25 @@ Keep **`api/index.js`** and **`web/services/triviaApi.ts`** in sync when changin
 | `GET` | `/api/stats` | — | Public anonymous usage + cost summary (any origin, cached 60 s) |
 | `GET` | `/api/stats/daily.csv` | — | Daily usage and estimated Gemini cost as CSV |
 
+Errors from `/api/questions` and `/api/results` come back as `{ "error": code }`:
+
+| Status | Code | Meaning |
+|--------|------|---------|
+| 400 | `invalid_request` | Bad browser input; the only error that blames the client |
+| 403 | `forbidden_origin` | Request came from another website |
+| 413 | `payload_too_large` | Body over the 2 MB limit |
+| 429 | `rate_limited` | Over the per-IP limit |
+| 500 | `internal_error` | Anything else, including Google refusing the call (bad key, retired model) |
+| 502 | `bad_model_reply` | Gemini's reply failed the schema check or was blocked, even after one retry |
+| 503 | `upstream_busy` | Google is shedding load and retries ran out |
+
 `gameId`/`deviceId` are optional so older clients keep working. Send header `X-Trivia-Test: 1` on any manual or scripted test so it is not counted as a player (it is still counted in cost).
 
 The frontend sends full previous quiz questions on replay to help Gemini avoid exact or near-duplicate questions. It adds `id` and shuffles `options` after fetch; the API returns canonical `correctAnswer` text.
 
 ## Backend (`api/`)
 
-Single entry point: **`api/index.js`** — Express routes plus two Genkit flows with zod structured output.
+Single entry point: **`api/index.js`** — Express routes plus two Genkit flows with zod structured output. The quiz prompt and its schemas live in **`api/triviaQuestions.js`**.
 
 | Flow | Input | Output |
 |------|-------|--------|
@@ -130,6 +142,8 @@ Single entry point: **`api/index.js`** — Express routes plus two Genkit flows 
 | Concern | Detail |
 |---------|--------|
 | Model | `googleai/gemini-3.8-flash` by default; override with `TRIVIA_MODEL` in `api/.env` (plugin: `@genkit-ai/google-genai`) |
+| Schema checks | Rules are written in zod. Genkit converts them to JSON Schema, sends that to Gemini, and checks replies and flow input with Ajv, so zod's own `.parse` and `.default()` never run on a live request |
+| Gemini failures | `generateWithRetry` retries overload with backoff inside `TRIVIA_RETRY_BUDGET_MS`, stops at once if Google refuses the call, and gives a bad reply one retry. Rejected replies were still billed, so they're logged with real tokens and cost |
 | Rate limit | 30 requests/minute per client IP, shared by `/api/questions` and `/api/results` (a classroom shares one IP); override with `TRIVIA_RATE_LIMIT_PER_MIN` in `api/.env` + restart |
 | CORS (prod) | Origin restricted to `https://trivia.benlamb.net` |
 | Secrets | `GOOGLE_GENAI_API_KEY` in `api/.env` only — use `api/.env.example` as template |
@@ -142,7 +156,8 @@ Single entry point: **`api/index.js`** — Express routes plus two Genkit flows 
 ```mermaid
 flowchart LR
   PR["Pull request"] --> CI["ci.yml\napi tests + web coverage + verify:bundle"]
-  Main["Push to main"] --> Deploy["deploy.yml"]
+  Main["Push to main"] --> CI
+  Main --> Deploy["deploy.yml"]
   Deploy --> Build["Build web/"]
   Deploy --> Verify["verify:bundle\nno SDK or key in dist"]
   Deploy --> Static["Deploy static assets"]
@@ -150,7 +165,8 @@ flowchart LR
 ```
 
 - **`ci.yml`:** Node tests in `api/`, Vitest coverage in `web/`, then `npm run verify:bundle` (ensures no `@google/genai` or `AIza…` in client bundles).
-- **`deploy.yml`:** SSH to VPS, `git pull`, build frontend, rotate nginx static root, restart the API systemd unit when `api/` changed.
+- **`deploy.yml`:** SSH to VPS, `git reset --hard` to the pushed commit, build frontend, rotate nginx static root, and reinstall dependencies and restart the API systemd unit when `api/` changed.
+- On `main`, CI runs beside the deploy, not before it, so a failing test doesn't stop a deploy. Run the tests before pushing.
 
 Operator detail (paths, rollback, journalctl): [CLAUDE.md](../CLAUDE.md).
 

@@ -142,32 +142,6 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ questions, onFinish, replayOpti
     <div className="min-h-screen flex flex-col bg-slate-50">
       {/* Enhanced Progress Header */}
       <div className="bg-white shadow-sm border-b-4 border-[#173A45] sticky top-0 z-40">
-        {/* Ways out: home, or a new quiz one step easier or harder */}
-        <div className="flex items-center justify-between gap-2 px-3 md:px-6 py-2 border-b-2 border-slate-200">
-          <button
-            onClick={onHome}
-            className="flex-shrink-0 inline-flex items-center gap-1 py-1 text-xs md:text-sm font-black text-[#173A45] hover:text-[#E87722] transition-colors"
-          >
-            <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            Home
-          </button>
-          <div className="flex items-center gap-2">
-            {replayOptions
-              .filter((option) => option.kind !== 'same')
-              .map((option) => (
-                <button
-                  key={option.kind}
-                  onClick={() => onReplay(option.tier)}
-                  className="px-2 md:px-3 py-1 rounded-lg border-2 border-[#173A45] bg-white text-xs md:text-sm font-black text-[#173A45] hover:bg-orange-50 transition-colors"
-                >
-                  {option.label}
-                </button>
-              ))}
-          </div>
-        </div>
-
         {/* Top Row: Categories */}
         <div className="flex w-full h-16 md:h-20">
           {orderedCategories.map((cat, idx) => {
@@ -226,6 +200,32 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ questions, onFinish, replayOpti
                  </span>
               </div>
            </div>
+        </div>
+
+        {/* Ways out: home, or a new quiz one step easier or harder */}
+        <div className="flex items-center justify-between gap-2 px-3 md:px-6 py-2">
+          <button
+            onClick={onHome}
+            className="flex-shrink-0 inline-flex items-center gap-1 py-1 text-xs md:text-sm font-black text-[#173A45] hover:text-[#E87722] transition-colors"
+          >
+            <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            Home
+          </button>
+          <div className="flex items-center gap-2">
+            {replayOptions
+              .filter((option) => option.kind !== 'same')
+              .map((option) => (
+                <button
+                  key={option.kind}
+                  onClick={() => onReplay(option.tier)}
+                  className="px-2 md:px-3 py-1 rounded-lg border-2 border-[#173A45] bg-white text-xs md:text-sm font-black text-[#173A45] hover:bg-orange-50 transition-colors"
+                >
+                  {option.label}
+                </button>
+              ))}
+          </div>
         </div>
       </div>
 

@@ -141,7 +141,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ questions, onFinish, replayOpti
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       {/* Enhanced Progress Header */}
-      <div className="bg-white shadow-sm border-b-4 border-[#173A45] sticky top-0 z-40">
+      <div className="bg-white shadow-sm sticky top-0 z-40">
         {/* Top Row: Categories */}
         <div className="flex w-full h-16 md:h-20">
           {orderedCategories.map((cat, idx) => {
@@ -181,7 +181,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ questions, onFinish, replayOpti
         </div>
 
         {/* Sub-header: Current Status */}
-        <div className={`${categoryColorClass} px-6 py-3 flex items-center justify-between transition-colors duration-500`}>
+        <div className={`${categoryColorClass} border-b-4 border-[#173A45] px-6 py-3 flex items-center justify-between transition-colors duration-500`}>
            <div className="flex flex-col">
              <span className="text-[10px] uppercase tracking-widest opacity-80 font-bold">Current Sector</span>
              <span className="text-lg md:text-xl font-black leading-none">{currentQuestion.category}</span>
